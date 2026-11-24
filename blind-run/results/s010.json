@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "*out_data = kcalloc(*out_size, sizeof(**out_data), GFP_KERNEL);",
+      "reason": "The kcalloc() return value is never checked. If the allocation fails, *out_data is NULL, but *out_address and *out_size already describe the extended range and the function returns void, so the caller cannot tell that it failed. The caller then reads or writes the DPCD data through this buffer (for example with memcpy or a DPCD read/write into *out_data), which dereferences a NULL pointer."
+    }
+  ],
+  "suggested_fix": "Check the kcalloc() result. If it returns NULL, either fall back to the original values (*out_address = in_address, *out_size = in_size, *out_data = in_data) or change the function to return an error code such as -ENOMEM or a bool, so the caller can stop before using the buffer. Callers must check this result before accessing *out_data and before freeing it."
+}

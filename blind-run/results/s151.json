@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "opinfo = rcu_dereference(fp->f_opinfo);",
+      "reason": "The oplock_info pointer is fetched under rcu_read_lock() but no reference is taken (no opinfo_get / refcount increment). After rcu_read_unlock() the pointer is kept and used later."
+    },
+    {
+      "statement": "if (opinfo && opinfo->is_lease) {",
+      "reason": "opinfo is dereferenced after the RCU read-side critical section ended. A concurrent oplock/lease break, close or durable-handle teardown from another connection can free the opinfo in the meantime, which makes this a use-after-free."
+    },
+    {
+      "statement": "create_lease_buf(rsp->Buffer, opinfo->o_lease);",
+      "reason": "opinfo->o_lease (and opinfo->o_lease->state in the debug print above it) is read from an object that may already have been freed, so freed kernel memory can be copied into the network response."
+    }
+  ],
+  "suggested_fix": "Take a real reference to the oplock instead of relying on a bare RCU pointer. For example, use opinfo_get(fp) (an atomic_inc_not_zero on opinfo->refcount under RCU), read the level, lease flag and lease state, and build the lease context while holding that reference, then drop it with opinfo_put() before returning. Another option is to copy every field you need (level, is_lease, lease state/key) inside the rcu_read_lock section and never touch opinfo after rcu_read_unlock()."
+}

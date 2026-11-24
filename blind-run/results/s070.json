@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The ACPI device reference is dropped with acpi_dev_put() only after acpi_dev_name()/acpi_get_first_physical_node() have used it, the codec device reference taken with get_device() is released on every error path (err/err_device labels), devm allocations and the GPIO/clock lookups handle -ENOENT/-EPROBE_DEFER correctly, and string formatting uses bounded snprintf(). As optional hardening, the mic_name[] index derived from the root-only quirk_override module parameter could be bounds-checked against ARRAY_SIZE(mic_name)."
+}

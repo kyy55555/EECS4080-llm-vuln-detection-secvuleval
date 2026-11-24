@@ -1,0 +1,10 @@
+▶ Scanning: samples/s104.c
+▶ Report:   results/s104.json
+I judged `find_asymmetric_key` in `samples/s104.c` vulnerable to a NULL pointer dereference (CWE-476), and wrote the result to `results/s104.json`.
+
+**The bug:** at `samples/s104.c:13`, the function checks for the case where all three key IDs are NULL, but `WARN_ON(...)` only logs a warning and lets the code carry on. Execution then reaches the `else` branch, where `id_2->data` and `id_2->len` (lines 22–23) are read from a NULL pointer. That crashes the kernel, so the impact is a denial of service. It can happen whenever a caller passes no key IDs, for example for a signature that carries none.
+
+**Fix:** make the check return an error: `if (WARN_ON(!id_0 && !id_1 && !id_2)) return ERR_PTR(-EINVAL);`. Callers should also make sure at least one key ID is present before calling the function.
+
+I worked only from this file, as instructed. Whether any real caller can actually pass three NULL IDs depends on code outside it, which I didn't check.
+✔ Report written to results/s104.json

@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "bridge_dev = pci_get_host_bridge_device(dev);",
+      "reason": "pci_get_host_bridge_device() takes a reference on the host bridge device (get_device()). The function never calls pci_put_host_bridge_device(). That includes the early returns (!bridge_dev->parent, !ks_pcie, RTL version mismatch) and the normal exit, so a reference leaks every time the quirk runs for a device under an AM654x bridge. The refcount can then never reach zero, so the host bridge is never freed."
+    }
+  ],
+  "suggested_fix": "Pair every successful pci_get_host_bridge_device() with pci_put_host_bridge_device(bridge_dev). Release it on every exit path: either right after reading what is needed (dev_get_drvdata(bridge_dev->parent)), or through a common cleanup label used by the early returns. Also handle the case where bridge_dev is non-NULL but bridge_dev->parent is NULL by putting the reference before returning."
+}

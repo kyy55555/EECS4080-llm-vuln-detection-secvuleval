@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix needed. The function takes disable_lock, unregisters the sysfb platform device and sets the disabled flag before releasing the lock. sysfb_init can therefore not race with it and register a device after it has been disabled. If the code needs hardening, it could check that the caller owns the system framebuffer device before unregistering it."
+}

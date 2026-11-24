@@ -1,0 +1,7 @@
+▶ Scanning: samples/s006.c
+▶ Report:   results/s006.json
+I've written the result to `results/s006.json`: the function is vulnerable, a NULL pointer dereference (CWE-476).
+
+- **The bug:** `pinmux_generic_get_function()` returns NULL when it can't find the function selector. Line 16, `*func = function->data;`, reads from that result without checking it first. The existing `if (!(*func))` check comes too late, because a NULL `function` has already been dereferenced by then.
+- **The fix:** Add `if (!function) return -EINVAL;` right after the call on line 15. The JSON also suggests checking the result of `pin_desc_get()` for NULL as a defensive extra.
+✔ Report written to results/s006.json

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s087.c
+▶ Report:   results/s087.json
+I judged the function vulnerable as a NULL pointer dereference (CWE-476) and wrote the verdict to `results/s087.json`.
+
+**The flagged line:** `return rpmsg_send(pg->ept, data, len);` uses the endpoint `pg->ept` without taking a lock or checking for NULL.
+
+**Why it's a problem:** In the wider pmic_glink driver, the endpoint is normally cleared to NULL when the rpmsg device is removed. A client could still call `pmic_glink_send` after that, or before the endpoint is set up. The call would then pass a NULL or freed endpoint to `rpmsg_send` and dereference it.
+
+**Caveat:** The sample contains only this function, so the remove-path behaviour comes from my knowledge of the driver, not from the file. The missing NULL check and missing lock are visible in the code itself.
+
+**Suggested fix:** Hold `pg->state_lock` while sending, and return an error such as `-ECONNRESET` if `pg->ept` is NULL. The probe and remove paths must set and clear `pg->ept` under the same lock.
+✔ Report written to results/s087.json

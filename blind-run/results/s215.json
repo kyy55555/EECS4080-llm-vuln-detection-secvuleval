@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-415",
+  "vulnerable_statements": [
+    {
+      "statement": "xe_irq_shutdown(xe);",
+      "reason": "xe_irq_install() registers a devm-managed action that uninstalls the IRQ and frees its handler when the device is released. The err_irq_shutdown path also tears down the IRQ by hand. If probe fails after xe_irq_install() succeeds, the IRQ is released twice: once here and again when devm unwinds. This double release can trigger a free_irq() on an already-freed handler or a use-after-free of IRQ state."
+    },
+    {
+      "statement": "goto err_irq_shutdown;",
+      "reason": "Every failure after IRQ installation (flat CCS, VRAM probe, tile init, display noaccel, GT init, display init) jumps to the manual IRQ shutdown, which duplicates the devm cleanup."
+    }
+  ],
+  "suggested_fix": "Let devm be the only owner of IRQ teardown. Remove the manual xe_irq_shutdown() call from the error path and send those failures to the display cleanup label instead. Alternatively, make xe_irq_shutdown() idempotent by checking and clearing an 'irq enabled' flag so the second release does nothing. Make sure each resource has exactly one release path, either manual or devm."
+}

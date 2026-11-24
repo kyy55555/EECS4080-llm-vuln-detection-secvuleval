@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-682",
+  "vulnerable_statements": [
+    {
+      "statement": "cpy = BITBIT_SIZE(count);",
+      "reason": "BITBIT_SIZE rounds count up to whole longs of full_fds_bits. If count is not a multiple of BITS_PER_LONG (for example when close_range(CLOSE_RANGE_UNSHARE) trims the table), the copy includes a 'word is full' bit for a word whose open_fds bits past count were not copied or were zeroed. full_fds_bits then disagrees with open_fds, so fd allocation can skip free slots or treat the bitmap state as wrong, which corrupts the fd table."
+    },
+    {
+      "statement": "cpy = count / BITS_PER_BYTE;",
+      "reason": "Integer division truncates. If count is not a multiple of BITS_PER_BYTE (or of BITS_PER_LONG), the partial trailing bits are neither copied nor cleared consistently, and the summary bitmap copy above no longer matches. The function silently assumes count is long-aligned and never checks it."
+    },
+    {
+      "statement": "memcpy(nfdt->full_fds_bits, ofdt->full_fds_bits, cpy);",
+      "reason": "This copies the stale full-word summary bits from the old table, including the bit for a partially copied last word. That leaves the new table's full_fds_bits inconsistent with its open_fds."
+    }
+  ],
+  "suggested_fix": "Copy bitmaps at bit granularity and clear the tail correctly, for example with bitmap_copy_and_extend(nfdt->open_fds, ofdt->open_fds, count, nfdt->max_fds), the same for close_on_exec, and bitmap_copy_and_extend(nfdt->full_fds_bits, ofdt->full_fds_bits, count / BITS_PER_LONG, BITBIT_NR(nfdt->max_fds)). That way a partially copied word is never marked full. Alternatively, have callers ensure count is always a multiple of BITS_PER_LONG (round up in sane_fdtable_size, capped at max_fds), and add a WARN/BUG_ON check for that."
+}

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s240.c
+▶ Report:   results/s240.json
+I judged the function vulnerable, as a NULL pointer dereference (CWE-476), and wrote the answer to `results/s240.json`.
+
+**Where it fails:** in the single-entry branch, the function copies from `pmksa->bssid` (line 22) and `pmksa->pmkid` (line 23) without first checking that either pointer is set.
+
+**Why that matters:** both fields depend on how cfg80211 fills in the request, which isn't in this file. As I understand nl80211, a PMKSA delete request can leave out the BSSID (naming the entry by SSID and cache ID instead) or leave out the PMKID. In either case, one of these pointers is NULL and the kernel crashes. A user with `CAP_NET_ADMIN` could trigger it through nl80211. I couldn't confirm this from the file itself, so how strong the finding is depends on that assumption being right.
+
+**Fix:** copy each field only if its pointer is non-NULL. Set `pmkid_len` only when a PMKID was actually copied. If an operation needs a field that's missing, return `-EINVAL` instead of dereferencing it.
+
+The rest of the function looks fine: it checks the allocation, computes the length correctly and frees the buffer.
+✔ Report written to results/s240.json

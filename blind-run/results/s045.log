@@ -1,0 +1,11 @@
+▶ Scanning: samples/s045.c
+▶ Report:   results/s045.json
+I wrote the answer to `results/s045.json`: the function is vulnerable, an out-of-bounds read (CWE-125).
+
+**Where:** `samples/s045.c:63-64`, the line that copies the previous value for entries marked `DATA_EQU_PREV`:
+`reg_table->mc_reg_table_entry[num_ranges].mc_data[i] = reg_table->mc_reg_table_entry[num_ranges].mc_data[i - 1];`
+
+**Why it's a bug:** If the first entry in the table (`i == 0`) comes from the VBIOS with its data type set to `DATA_EQU_PREV`, the code reads `mc_data[i - 1]`. Because `i` is an unsigned 32-bit value, `i - 1` wraps around to `0xFFFFFFFF`. The read then lands far outside the `mc_data` array. Nothing checks that `i > 0` first.
+
+**Suggested fix:** Read the previous entry only when `i > 0`; otherwise skip the entry or return `-EINVAL`. The file also trusts offsets and sizes taken from the VBIOS without checking them against the table size. The JSON recommends validating those too, but only lists the `i - 1` read as the vulnerable statement.
+✔ Report written to results/s045.json

@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "list_add_tail(&buf->node, &fl->mmaps);",
+      "reason": "The buffer is published on fl->mmaps (with its DSP address known via raddr) before the function has finished. Another thread can call the munmap ioctl at the same time, find this buffer in the list, and unmap and free it while this function still uses buf."
+    },
+    {
+      "statement": "fastrpc_req_munmap_impl(fl, buf);",
+      "reason": "If copy_to_user fails after the buffer was added to the list, the error path unmaps and frees buf. A concurrent munmap may already have freed it, so this can be a use-after-free or double free. A stale list entry can also be left behind for later access."
+    },
+    {
+      "statement": "dev_dbg(dev, \"mmap\\t\\tpt 0x%09lx OK [len 0x%08llx]\\n\", buf->raddr, buf->size);",
+      "reason": "This reads buf after the lock is dropped and the buffer is already visible in the list, so a concurrent munmap could have freed it (use-after-free)."
+    }
+  ],
+  "suggested_fix": "Add the buffer to fl->mmaps only after every step that can fail has succeeded, including copy_to_user of the result. That way no other thread can find and free the buffer while this function still owns it, and the error path only frees a buffer that is not in the list. Do not touch buf after it is published, or use reference counting. Also make sure the error path removes the buffer from the list if it was added."
+}

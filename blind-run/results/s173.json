@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function computes the range under inode_lock and clamps pg_end to i_size. It rejects compress-released and atomic files, and in-place-update (including pinned) inodes. It waits for writeback before marking pages for GC and limits each pass to one segment. It clears the FI_SKIP_WRITES and FI_OPU_WRITE flags on every exit path. Overflow of range->start + range->len is expected to be checked by the ioctl caller against the maximum file size."
+}

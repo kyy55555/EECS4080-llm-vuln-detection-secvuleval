@@ -1,0 +1,16 @@
+▶ Scanning: samples/s215.c
+▶ Report:   results/s215.json
+I marked `xe_device_probe` in `samples/s215.c` as vulnerable and wrote the answer to `results/s215.json`. It's a double release of the interrupt, CWE-415 (double free). This rests on how a function outside this file behaves, so it's a likely finding, not a certain one.
+
+**The finding:** at line 121, the `err_irq_shutdown:` error path calls `xe_irq_shutdown(xe)` to shut the interrupt down by hand. Six failures after the interrupt is installed (lines 69–104) jump there.
+
+**The assumption:** I'm assuming that `xe_irq_install()` also registers its own automatic cleanup with the kernel's device-managed (devm) mechanism, so the interrupt is released when the device is torn down. That code isn't in this file, so I couldn't confirm it. I'm basing it on my memory of the Linux xe driver. If it's true, a probe failure after line 63 releases the interrupt twice: once by hand and once by the automatic cleanup. That can mean freeing an already-freed interrupt handler or using its state after it's freed.
+
+**Suggested fix (in the JSON):** keep only one cleanup path. Either drop the manual `xe_irq_shutdown()` from the error path and let the automatic cleanup handle it, or make the shutdown safe to call twice.
+
+**Other candidates I considered but didn't list:**
+- **Early-return cleanup:** some early `return err` paths skip display cleanup. If those resources aren't freed automatically, that's a resource leak.
+- **`drm_dev_register` failure:** cleanup of what's already set up when this call fails.
+
+Neither looked as strong as the double release.
+✔ Report written to results/s215.json

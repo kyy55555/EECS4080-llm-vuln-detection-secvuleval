@@ -1,0 +1,14 @@
+▶ Scanning: samples/s113.c
+▶ Report:   results/s113.json
+I've written the answer to `results/s113.json`: the function is vulnerable, a resource leak in the probe's error handling (CWE-401).
+
+**The problem:** At `samples/s113.c:65`, `of_platform_populate()` creates and registers the child dwc3 core device. Two later failures leave the function without ever calling `of_platform_depopulate()`:
+- **`st_dwc3_drd_init()` fails** (line 91, `goto undo_softreset`): the error path only puts the reset lines back into reset and returns. The child core device stays registered, even though its hardware is now held in reset and the parent probe has failed.
+- **`of_find_device_by_node()` fails** (line 75, `goto err_node_put`): the child devices that were just created are leaked the same way.
+
+The code already releases its reference to the child device with `platform_device_put()`. What it never does is remove the devices it created.
+
+**Suggested fix:** Add a `depopulate:` label that calls `of_platform_depopulate(dev)` and then falls through to the existing reset cleanup. Every failure after `of_platform_populate()` succeeds should jump to it.
+
+One thing to check if your results are scored by exact line match: the second statement I listed, `goto err_node_put;`, appears identically at lines 61, 68 and 75. Only the one at line 75 is a leak; the reason text in the JSON says so, but the statement string alone can't tell them apart.
+✔ Report written to results/s113.json

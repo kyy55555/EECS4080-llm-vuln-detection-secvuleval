@@ -1,0 +1,15 @@
+▶ Scanning: samples/s018.c
+▶ Report:   results/s018.json
+I wrote the answer to `results/s018.json`. The function is **vulnerable**: a use-after-free on a stack object (CWE-416).
+
+**The problem:** At `samples/s018.c:12`, the function saves a pointer to a local completion object (`&completion`) in the long-lived per-phy structure. This happens every time the function runs. But only three paths actually wait on it: setting the link rate, hard reset and link reset, and only when the phy is disabled.
+
+Every other path leaves the pointer behind after the function returns:
+- the early `return -EFAULT` on fatal errors at line 21
+- the release-spinup-hold, disable, get-events and default cases
+- the three reset/link-rate cases when the phy isn't disabled
+
+The pointer then refers to stack memory that is no longer valid. When a later phy-start response arrives, its handler calls `complete()` through that pointer, which corrupts the stack.
+
+**Suggested fix:** Remove the assignment at the top of the function. Instead, set `enable_completion` right before `phy_start_req()`, only in the branches that then call `wait_for_completion()`. Set it back to NULL after the wait, and have the completion handler check for NULL before calling `complete()`.
+✔ Report written to results/s018.json

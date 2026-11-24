@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks block, device, the discipline's is_ese callback and the sense pointer for NULL before using them. It only reads fixed small offsets (sense[1], sense[2]) of the sense buffer returned by dasd_get_sense(), and that buffer is always 32 bytes long (the IRB ECW/sense area)."
+}

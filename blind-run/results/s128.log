@@ -1,0 +1,15 @@
+▶ Scanning: samples/s128.c
+▶ Report:   results/s128.json
+I judged `ice_free_q_vector` in `samples/s128.c` to be **not vulnerable** and wrote that to `results/s128.json`, with `cwe` set to null and an empty `vulnerable_statements` list. This is a judgement from reading the code; nothing was compiled or run.
+
+The teardown runs in a safe order:
+- **Missing vector:** if the slot is empty, it logs a message and returns before touching anything.
+- **Ring back-pointers:** each Tx and Rx ring's link to the vector is cleared before the vector is freed, so no ring is left pointing at freed memory.
+- **NAPI:** it is removed only when the VSI has a network device, which is the only case where it was set up.
+- **Interrupt:** it is released only if one was allocated, and for a VF control VSI only when no other VF still uses that control VSI.
+- **Free:** the vector is freed and its array slot set to NULL, so nothing keeps a stale pointer to it.
+
+There are two things I couldn't confirm from this file alone:
+- `v_idx` is never range-checked here. That's safe only if every caller passes an in-range index, as they usually do in this driver.
+- `kfree` runs straight after `netif_napi_del` with no wait. This depends on the kernel's NAPI rules, which this file doesn't show.
+✔ Report written to results/s128.json

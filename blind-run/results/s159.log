@@ -1,0 +1,9 @@
+▶ Scanning: samples/s159.c
+▶ Report:   results/s159.json
+I marked `rtw_usb_init_rx` in `samples/s159.c` as **not vulnerable** and wrote the result to `results/s159.json`.
+
+- **Workqueue:** the function checks whether `create_singlethread_workqueue` succeeded and returns `-ENOMEM` if it didn't, so nothing goes on to use a NULL workqueue.
+- **Queue and work item:** `rx_queue` and `rx_work` are both set up before the function returns, so nothing can use them before they're ready.
+
+Some risk could remain in code outside this file. Whatever tears this down must cancel `rx_work`, destroy `rxwq` and purge `rx_queue`, both on normal shutdown and when probe fails. Doing that in the wrong order could lead to a use-after-free or a leak, but none of that cleanup is in this function, so I couldn't check it.
+✔ Report written to results/s159.json

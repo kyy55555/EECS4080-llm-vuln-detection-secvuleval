@@ -1,0 +1,17 @@
+▶ Scanning: samples/s177.c
+▶ Report:   results/s177.json
+I wrote the answer to `results/s177.json`: the function is **vulnerable**, classified as type confusion (CWE-843).
+
+**What's wrong:** At `samples/s177.c:15`, the function checks two things about the parent page table: that it isn't an auto-created domain, and that it is marked as a nesting parent. It never checks that the parent's domain was created by the same IOMMU driver as this device's (`ops`). It then passes `parent->common.domain` to `ops->domain_alloc_user` at line 27.
+
+**Why it matters:** IOMMU drivers usually treat the parent domain they receive as their own internal domain type. A user could create a nesting parent on a device handled by one IOMMU driver, then use it as the parent for a nested allocation on a device handled by a different driver. The second driver would then read memory that isn't the type it expects, which can mean invalid or out-of-bounds kernel memory access.
+
+**Suggested fix:** Reject a parent from another driver before calling into the driver:
+```c
+if (parent->auto_domain || !parent->nest_parent ||
+    parent->common.domain->owner != ops)
+        return ERR_PTR(-EINVAL);
+```
+
+I'm fairly but not completely sure. The bug depends on how drivers handle the parent domain, which isn't in this file, so that part comes from general knowledge of how drivers are written. As far as I recall, upstream Linux fixed this with the same owner check, but I didn't verify that because the task limited me to this one file.
+✔ Report written to results/s177.json

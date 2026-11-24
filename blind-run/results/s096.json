@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "bfqq->waker_bfqq = old_bfqq->waker_bfqq;",
+      "reason": "bfq_split_bfqq(bic, bfqq) drops the bic's process reference to old_bfqq (bfq_put_queue/bfq_release_process_ref). If that was the last reference, old_bfqq is freed. Reading old_bfqq->waker_bfqq afterwards is a use-after-free. The stale waker pointer is then linked into a woken_list via hlist_add_head, which can corrupt memory."
+    },
+    {
+      "statement": "bfqq = bfq_split_bfqq(bic, bfqq);",
+      "reason": "This call may release the last reference to old_bfqq. The function still keeps old_bfqq and dereferences it afterwards."
+    }
+  ],
+  "suggested_fix": "Read old_bfqq->waker_bfqq into a local variable before calling bfq_split_bfqq(), while the reference to bfqq is still held. Then use that saved value (or re-validate it) after the split, and do not touch old_bfqq after the split. Another option is to take an extra reference on old_bfqq around the split and drop it after copying the waker. The upstream fix saves the waker before splitting and stops dereferencing old_bfqq after bfq_split_bfqq()."
+}

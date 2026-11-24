@@ -1,0 +1,14 @@
+▶ Scanning: samples/s154.c
+▶ Report:   results/s154.json
+I've written the verdict to `results/s154.json`: the function is vulnerable to a NULL pointer dereference (CWE-476). My confidence in this is moderate, not high.
+
+**The problem:** `mach` comes from `pdev->dev.platform_data` and is never checked for NULL. It is then dereferenced twice:
+- `platform_name = mach->mach_params.platform;` (`samples/s154.c:38`)
+- `ctx->common_hdmi_codec_drv = mach->mach_params.common_hdmi_codec_drv;` (`samples/s154.c:45`)
+
+If the device is set up without that platform data (for example, bound to the driver manually), the probe crashes the kernel.
+
+**Suggested fix:** get `mach` with `dev_get_platdata(&pdev->dev)` and return `-EINVAL` if it is NULL, before reading `mach_params`. The JSON also suggests optionally checking `pdev->id_entry`, which line 5 dereferences without a check.
+
+**Why moderate confidence:** In normal use the ACPI machine driver always supplies this platform data, so the bug needs an unusual setup to trigger. I also looked at a second possibility and left it out: the loop at line 11 is sized by `broxton_rt298_dais` but indexes `card->dai_link`. That would only overflow if the selected card used a smaller link array, and I can't confirm that from this file alone.
+✔ Report written to results/s154.json

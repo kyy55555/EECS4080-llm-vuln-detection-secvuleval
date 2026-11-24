@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks for a NULL connector, recomputes the mask while holding conn->lock, and records whether the parent has just started watching children. It calls fsnotify_conn_set_children_dentry_flags() only after dropping the spinlock, so it does not walk the children under a spinlock. Stale PARENT_WATCHED flags left behind when watching stops are cleared lazily in __fsnotify_parent(), which avoids the softlockup caused by eagerly walking very large child lists."
+}

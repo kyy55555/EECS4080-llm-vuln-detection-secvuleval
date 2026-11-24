@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-362",
+  "vulnerable_statements": [
+    {
+      "statement": "if (atomic_read(&inode->i_count))",
+      "reason": "i_count is checked only before inode->i_lock is taken. Between this check and spin_lock(&inode->i_lock), another thread (e.g. find_inode()/__iget() or iput() paths) can take a new reference to the inode. evict_inodes() then marks the inode I_FREEING and adds it to the dispose list while it is still in use, so the inode is evicted and freed while someone else holds a reference. That is a race that leads to use-after-free."
+    },
+    {
+      "statement": "inode->i_state |= I_FREEING;",
+      "reason": "The inode is marked for freeing without re-checking i_count under i_lock, so an inode that just gained a reference is still torn down by dispose_list()."
+    }
+  ],
+  "suggested_fix": "After acquiring inode->i_lock, check i_count again and skip the inode if it is non-zero, e.g. `spin_lock(&inode->i_lock); if (atomic_read(&inode->i_count)) { spin_unlock(&inode->i_lock); continue; }`. You can keep the unlocked check as a fast-path filter. Only the check made under i_lock is authoritative, because __iget() also runs under i_lock, so with the lock held no new reference can appear before I_FREEING is set."
+}

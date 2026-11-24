@@ -1,0 +1,13 @@
+▶ Scanning: samples/s025.c
+▶ Report:   results/s025.json
+I wrote the verdict to `results/s025.json`: the function is vulnerable to an out-of-bounds read (CWE-125).
+
+**The bug:** The function looks up a durable-handle create context with `smb2_find_context_vals()` and then treats it as one of three larger structures, reading fields from it. It never checks that the context's data, as declared by the client's `DataOffset + DataLength`, is big enough to hold that structure. A client can send a context that is too short, and the server will read past the end of the request buffer. This happens in three places:
+- **DH2C:** `recon_v2->Fid.PersistentFileId`, and `recon_v2->CreateGuid` in the `memcmp`.
+- **DHnC:** `recon->Data.Fid.PersistentFileId`.
+- **DH2Q:** `durable_v2_blob->CreateGuid`, `Flags` and `Timeout`.
+
+**Suggested fix:** In each of those three cases, check before reading that `le16_to_cpu(context->DataOffset) + le32_to_cpu(context->DataLength)` is at least the size of the expected structure. If it isn't, return `-EINVAL`.
+
+I also noticed a possible second problem that I left out of the JSON because I'm less sure of it. In the DH2Q path, the handle returned by `ksmbd_lookup_fd_cguid()` may never be released when the client GUIDs don't match. Whether that leaks a reference depends on how that lookup function counts references, which is defined outside this file.
+✔ Report written to results/s025.json

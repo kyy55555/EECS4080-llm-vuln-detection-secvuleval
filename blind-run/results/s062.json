@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "sch->q.qlen--;",
+      "reason": "The netem qlen and backlog are decremented as soon as the packet is pulled from the tfifo, even when it is then handed to the child qdisc rather than returned to the caller. If the child enqueue fails, qdisc_tree_reduce_backlog() is called on a netem qdisc that already reports qlen 0, so the qlen counters become inconsistent. A classful parent (e.g. HFSC/DRR) may then deactivate or delete its class while it is still referenced on its active list, which leads to a use-after-free."
+    },
+    {
+      "statement": "qdisc_tree_reduce_backlog(sch, 1, pkt_len);",
+      "reason": "This tells the parents about a drop after netem's own qlen was already decremented. When the netem qlen reaches 0, the parent's qlen_notify fires with the wrong accounting. That puts the parent's class lists in an inconsistent state, and the class can later be used after it has been freed."
+    }
+  ],
+  "suggested_fix": "Do not decrement sch->q.qlen or the backlog when the packet is removed from the tfifo. If the packet is enqueued to the child qdisc and the enqueue fails, decrement sch->qstats.backlog and sch->q.qlen and then call qdisc_tree_reduce_backlog(). If the packet is delivered directly (no child qdisc), decrement sch->q.qlen just before 'goto deliver'. This keeps qlen and backlog consistent, so parent qdiscs do not deactivate classes they still reference."
+}

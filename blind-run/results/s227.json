@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. phy_id comes from the libsas-owned sas_phy->id, which is bounded by the HBA's registered phy count. The fatal-error state is checked before any IOMB is issued. The GET_EVENTS path releases the spinlock on every exit and masks the register offset with phy_id & 3. For robustness, the on-stack completion waits could use wait_for_completion_timeout(), and the code could check the return value of phy_start_req(), so that a controller that never responds cannot hang the caller."
+}

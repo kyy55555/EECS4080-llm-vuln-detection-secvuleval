@@ -1,0 +1,14 @@
+▶ Scanning: samples/s120.c
+▶ Report:   results/s120.json
+I judged the function vulnerable, as a NULL pointer dereference (CWE-476), and wrote the result to `results/s120.json`.
+
+**Why:** the guard on lines 24–25 lets the recovery command run only when the device is not open and is in the quiesced state. A successful call never changes that state, and no new daemon (the user-space process serving the device) has opened it yet. So the same command sent a second time passes the guard again.
+
+**What breaks:** on the first call, `ublk_queue_reinit` releases each queue's daemon reference and sets `ubq->ubq_daemon` to NULL. On the second call it runs again on that NULL pointer (for example `put_task_struct(NULL)`), which triggers a kernel warning and then a NULL pointer dereference.
+
+**Caveat:** what `ublk_queue_reinit` does isn't visible in this file. That part of the reasoning comes from my knowledge of the ublk driver, and it matches an upstream fix for this function as I remember it.
+
+**Suggested fix:** before reinitializing, require that all queues still have their old daemons (every queue ready), or move the device into a separate "recovering" state so a repeat call returns `-EBUSY`. As extra safety, `ublk_queue_reinit` should check for a NULL daemon before releasing it.
+
+The `statement` field for the first entry covers lines 24–25 and is stored with `\n\t` escapes, so it isn't a single literal line.
+✔ Report written to results/s120.json

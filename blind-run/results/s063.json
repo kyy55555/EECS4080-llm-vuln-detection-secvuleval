@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The command union is fully zeroed with memset before use, so no uninitialized stack data reaches firmware, and payload_bytes is set from the size of the fixed payload struct. The parameters are only copied into a fixed-size firmware command and are not used as indexes or lengths in this function. As defense in depth, callers could check that otg_inst, panel_inst and pwrseq_inst are in range before building the command."
+}

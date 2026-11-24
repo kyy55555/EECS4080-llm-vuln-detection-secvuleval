@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The result of lookup_atid() is checked for NULL before ep is dereferenced, the endpoint state is updated under ep->com.mutex, the atid is removed from the xarray before it is freed, and on the error path the mutex is released before the connect upcall and disconnect."
+}

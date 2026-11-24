@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "dma_fence_init(&pfence->base, &preempt_fence_ops,\n\t\t      &q->lr.lock, context, seqno);",
+      "reason": "The fence's spinlock is borrowed from the exec queue (q->lr.lock). The preempt fence can live longer than the queue: once the fence signals, the preempt work drops the queue reference (xe_exec_queue_put), and the queue can then be freed. Other holders of the dma_fence (reservation objects, waiters, dma_fence_* helpers that take fence->lock) can still take or release that lock after the queue memory is freed. This is a use-after-free of the lock."
+    }
+  ],
+  "suggested_fix": "Do not tie the dma_fence lock to the exec queue's lifetime. Embed a spinlock in struct xe_preempt_fence (or use another lock that lives at least as long as the fence), initialize it, and pass that lock to dma_fence_init. The other option is to make sure the queue reference is held until the fence itself is released, for example by dropping it in the fence's release callback."
+}

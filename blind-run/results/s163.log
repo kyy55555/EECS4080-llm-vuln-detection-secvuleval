@@ -1,0 +1,9 @@
+▶ Scanning: samples/s163.c
+▶ Report:   results/s163.json
+I wrote the answer to `results/s163.json`: the function is vulnerable to a NULL pointer dereference (CWE-476).
+
+- **The bug:** at `samples/s163.c:18`, `get_cap_buffer()` can return NULL. The function itself expects this, because lines 22–23 check `fb ? ... : 0`. But line 20 still runs `container_of(fb, ...)` without checking. When `fb` is NULL, `dst_buf_info` is a bad pointer near NULL. Lines 33–34 then pass it to `v4l2_m2m_buf_copy_metadata()`, which writes through it and crashes the kernel.
+- **Suggested fix:** check `fb` right after `get_cap_buffer()` and return an error if it is NULL, before `container_of()` and the metadata copy run.
+
+The `data[2]` array is never initialised before it goes to `vpu_dec_start()` at line 65. I didn't list it as a vulnerable statement, but the suggested fix also recommends zeroing it.
+✔ Report written to results/s163.json

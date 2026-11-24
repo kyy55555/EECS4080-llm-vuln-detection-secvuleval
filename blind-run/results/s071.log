@@ -1,0 +1,8 @@
+▶ Scanning: samples/s071.c
+▶ Report:   results/s071.json
+I found a vulnerability: a possible NULL pointer dereference (CWE-476) in `samples/s071.c:59`, and I wrote it up in `results/s071.json`. I worked from this one file only and did not compile or run anything.
+
+- **The flaw:** `acpi_dev_get_first_match_dev()` can return NULL, for example when the codec's ACPI device isn't present. The code checks `adev` before rewriting the codec name. It then passes `adev` to `acpi_get_first_physical_node(adev)` without checking it again.
+- **Why that crashes:** That function reads fields inside the device structure it is given, so a NULL `adev` makes the driver's probe crash the kernel. This last point depends on how that function works internally, since its code isn't in this file.
+- **Suggested fix:** If `adev` is NULL, log an error and return `-ENOENT` or `-ENODEV` straight away. Only call `acpi_get_first_physical_node()` and `acpi_dev_put()` when `adev` is valid.
+✔ Report written to results/s071.json

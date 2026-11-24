@@ -1,0 +1,11 @@
+▶ Scanning: samples/s175.c
+▶ Report:   results/s175.json
+I don't think `amdgpu_device_recover_vram` in `samples/s175.c` has a security vulnerability, and I've written that verdict to `results/s175.json` (`is_vulnerable: false`, no CWE, empty statement list).
+
+- **Missing objects:** The loop skips entries where `vmbo->shadow` is NULL (line 17) and checks `shadow->tbo.resource` before reading from it (line 22).
+- **Fence reference counting:** This is where a use-after-free would most likely sit, and it's handled correctly. After waiting on the previous fence, the code releases it and sets `fence = next` (lines 34–35) *before* either timeout `break`. So no fence is released twice and none is leaked. A version that only set `fence = next` after the timeout checks would release the same fence a second time after the loop; this one doesn't.
+- **Last fence:** The final fence is waited on and released after the lock is dropped (lines 49–51). `dma_fence_put` accepts NULL, so the no-fence case is safe.
+- **Locking:** The shadow list is only walked while `shadow_list_lock` is held, and the lock is released on every exit from the loop.
+
+One remaining doubt: line 25 reads `shadow->parent->tbo.resource->mem_type` without checking that `resource` is non-NULL. I can't tell from this file alone whether that pointer can ever be NULL, so I didn't list it as a vulnerability. The suggested fix in the JSON recommends adding that NULL check as a hardening step.
+✔ Report written to results/s175.json

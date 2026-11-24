@@ -1,0 +1,15 @@
+▶ Scanning: samples/s020.c
+▶ Report:   results/s020.json
+I found no vulnerability in `ice_free_q_vector` in `samples/s020.c` and wrote that verdict to `results/s020.json`. `is_vulnerable` is false, `cwe` is null and `vulnerable_statements` is empty. I'm fairly but not fully confident: I only had this one function, so I couldn't check its helpers or callers.
+
+Why the teardown looks safe:
+- **NULL check:** it checks `vsi->q_vectors[v_idx]` for NULL before using it.
+- **Pointers cleared before the free:** every Tx and Rx ring has its NAPI link and its `q_vector` pointer cleared before the q_vector is freed, so no ring keeps a stale pointer.
+- **NAPI:** `netif_napi_del` only runs when the VSI has a netdev, which matches when NAPI is set up.
+- **IRQ:** the interrupt is only freed if one was allocated (`irq.index >= 0`). It is skipped while another VF control VSI may still be using it.
+- **No dangling pointer:** after `kfree`, the slot `vsi->q_vectors[v_idx]` is set to NULL.
+
+Not checked:
+- **`v_idx` bounds:** the function never checks `v_idx` against the array size, so it relies on callers passing a valid index.
+- **Locking:** whether callers hold the right locks (for example rtnl when the NAPI links are cleared) can't be seen from this file.
+✔ Report written to results/s020.json

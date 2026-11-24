@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "battmgr->client = devm_pmic_glink_register_client(dev,",
+      "reason": "The pmic_glink client is registered and goes live (it is added to the client list and can get qcom_battmgr_pdr_notify/qcom_battmgr_callback right away, which schedules enable_work) before the returned pointer is stored in battmgr->client. qcom_battmgr_enable_worker / qcom_battmgr_request then call pmic_glink_send(battmgr->client, ...) while battmgr->client is still NULL. This race causes a NULL pointer dereference."
+    },
+    {
+      "statement": "battmgr->bat_psy = devm_power_supply_register(dev, &sc8280xp_bat_psy_desc, &psy_cfg);",
+      "reason": "Power supplies are registered and visible to userspace and the kernel (uevents, sysfs get_property) before battmgr->client exists. A get_property call goes through qcom_battmgr_request, which uses the NULL battmgr->client. The same applies to the other devm_power_supply_register calls."
+    }
+  ],
+  "suggested_fix": "Split client allocation from client registration. First allocate the pmic_glink client (e.g. devm_pmic_glink_client_alloc) and store it in battmgr->client. Then register the power supplies. Only then call pmic_glink_client_register() to enable callbacks and PDR notifications. That way battmgr->client is always valid before any callback, worker or property access can use it. Callers should also check that the client or service is up before sending requests."
+}

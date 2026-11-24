@@ -1,0 +1,13 @@
+▶ Scanning: samples/s143.c
+▶ Report:   results/s143.json
+I judged `gtp_encap_enable_socket` in `samples/s143.c` **not vulnerable** and wrote that to `results/s143.json`, with `cwe` set to null and no vulnerable statements listed.
+
+Each step that could go wrong is handled:
+- **Socket lookup:** if `sockfd_lookup` can't find the socket, the function returns NULL straight away.
+- **Socket type checks:** it only accepts a UDP datagram socket (`IPPROTO_UDP`, `SOCK_DGRAM`) that is either IPv4 or IPv6. It also rejects IPv6 sockets that aren't set to IPv6-only. That blocks the kind of mismatched socket that has caused bugs in tunnel code before.
+- **Locking:** it checks whether the socket is already claimed (`sk_user_data`) while holding the socket lock, and only then sets up the tunnel. Two callers therefore can't both claim the same socket.
+- **Reference counting:** it takes a reference on the socket (`sock_hold`) before installing the tunnel callbacks.
+- **Cleanup on errors:** every error path unlocks and releases the socket. The cleanup uses `sock->sk` rather than `sk`, which matters because `sk` has been overwritten with an error code by then.
+
+The function looks like the corrected form of this code. Its teardown function (`gtp_encap_destroy`) isn't in the file, so I couldn't check it.
+✔ Report written to results/s143.json

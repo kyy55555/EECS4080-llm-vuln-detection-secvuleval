@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "*out_data = kcalloc(*out_size, sizeof(**out_data), GFP_KERNEL);",
+      "reason": "kcalloc can fail and return NULL. The NULL pointer is stored in *out_data and handed back to the caller, which then reads or writes the extended DPCD buffer through it (and later memcpy/kfree it), causing a NULL pointer dereference."
+    },
+    {
+      "statement": "ASSERT(*out_data);",
+      "reason": "ASSERT only logs or warns in DC code. It does not stop execution, so an allocation failure is never actually handled and the function returns as if it succeeded."
+    }
+  ],
+  "suggested_fix": "Check the result of kcalloc explicitly. If it returns NULL, fall back to the original, non-extended range (*out_address = in_address, *out_size = in_size, *out_data = in_data) or return an error code that callers must check before using the buffer. Replace the ASSERT with real error handling."
+}

@@ -1,0 +1,14 @@
+▶ Scanning: samples/s101.c
+▶ Report:   results/s101.json
+I saved the verdict to `results/s101.json`: I judged `snd_byt_rt5651_mc_probe` in `samples/s101.c` **not vulnerable**. I used only this file.
+
+The spots where these probe functions usually go wrong are all handled correctly here:
+- **Null pointer:** the loop that finds the codec DAI checks `num_codecs` before reading `codecs->name` (`samples/s101.c:26`), so placeholder DAI links with no codec are skipped safely.
+- **Use-after-free:** `acpi_dev_name(adev)` is used at line 38, before `acpi_dev_put(adev)` releases the device at line 46.
+- **Reference leak:** the probe takes its own reference to `codec_dev` with `get_device()` at line 49. Every failure after that point frees it through the `err` / `err_device` labels.
+- **Buffer overflow:** all text written into the fixed buffers goes through `snprintf` with `sizeof`, so it can't overflow.
+
+**Minor hardening note, not a vulnerability:** at lines 191 and 200, `mic_name[BYT_RT5651_MAP(byt_rt5651_quirk)]` assumes the index is 0–3. I expect `BYT_RT5651_MAP` is a 4-bit field, but its definition isn't in this file, so that's an assumption. If it is, the `quirk_override` module parameter could set a larger value and read past the 4-entry array. Only root can set module parameters, so I didn't report it as a vulnerability, but the fix text in the JSON suggests a bounds check.
+
+**Snippet oddity:** there is a stray `#endif` at line 204 because the matching `#if` on line 195 is commented out. It looks like the sample was cut out of a larger file, and it has no security impact.
+✔ Report written to results/s101.json

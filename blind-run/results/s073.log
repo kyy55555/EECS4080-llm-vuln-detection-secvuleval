@@ -1,0 +1,17 @@
+▶ Scanning: samples/s073.c
+▶ Report:   results/s073.json
+I marked `f2fs_defragment_range` in `samples/s073.c` as **vulnerable** (CWE-362, a race condition) and wrote the answer to `results/s073.json`.
+
+**The problem:** after locking the inode, the function only rejects files with the `FI_COMPRESS_RELEASED` flag. It never checks whether the file is in the middle of an atomic write. During an atomic write, f2fs keeps the uncommitted data in a separate copy-on-write inode. If defragment runs on such a file, it marks the file's pages dirty and writes them back while the atomic write is still in progress. That conflicts with the commit path and can corrupt the atomic-write data.
+
+**Suggested fix:** while holding `inode_lock`, also reject atomic-write files:
+```c
+if (is_inode_flag_set(inode, FI_COMPRESS_RELEASED) ||
+    f2fs_is_atomic_file(inode)) {
+        err = -EINVAL;
+        goto unlock_out;
+}
+```
+
+I could only see this one function, so I can't confirm that the ioctl handler that calls it doesn't already reject atomic-write files. If it does, this finding wouldn't hold. I chose this finding because, from memory, upstream f2fs later added this same atomic-write check to defragment. I found no memory-safety bugs: the page range is capped at the file size and only computed after the lock is taken.
+✔ Report written to results/s073.json

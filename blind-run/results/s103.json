@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "nchildren = nilfs_btree_node_get_nchildren(node);",
+      "reason": "In the height-3 case, the child count is read from an on-disk block that may be corrupted or crafted. Nothing checks that it is greater than 0. The earlier nchildren == 0 check only covers the root node."
+    },
+    {
+      "statement": "maxkey = nilfs_btree_node_get_key(node, nchildren - 1);",
+      "reason": "If the child node reports 0 (or a negative number of) children, nchildren - 1 is negative. The function then reads a key from before the node's key array, which is an out-of-bounds read."
+    }
+  ],
+  "suggested_fix": "After reading nchildren from the child block in the height-3 case, check that it is valid before using it. If nchildren <= 0, call brelse(bh) and return 0, or return -EINVAL after reporting the corrupted node. Also check that nchildren is no larger than the node's maximum capacity, so the index cannot go past the end of the block."
+}

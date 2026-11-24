@@ -1,0 +1,9 @@
+▶ Scanning: samples/s167.c
+▶ Report:   results/s167.json
+I wrote `results/s167.json` with the verdict that `aac_init_adapter` in `samples/s167.c` is **not vulnerable**.
+
+- **No double free:** The function's error paths could have caused one, but they don't. When `aac_comm_init()` or `aac_fib_setup()` fails, the function frees `dev->queues` and then sets it to `NULL` (lines 135–136 and 143–144). If a caller frees `dev->queues` again during cleanup, it is freeing `NULL`, which does nothing. That pointer reset is the usual fix for this kind of bug, so this looks like the patched version of the function.
+- **Adapter-supplied values:** The limits read from the adapter (`status[1..4]`, used for `max_fib_size`, `sg_tablesize` and `can_queue`) are not range-checked. That only matters if the hardware or firmware can't be trusted, and this file alone doesn't show a clear memory-safety problem from it. I put it in `suggested_fix` as a hardening idea rather than reporting it as a vulnerability.
+
+I worked only from this one file, so I couldn't confirm how the caller cleans up after a failure.
+✔ Report written to results/s167.json

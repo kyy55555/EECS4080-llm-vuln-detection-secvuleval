@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "pdata->name = devm_kasprintf(ispi->dev, GFP_KERNEL, \"%s-chip1\",",
+      "reason": "devm_kasprintf() can fail and return NULL under memory pressure, but the return value is never checked. pdata->name is then passed on as the platform data name for the second SPI NOR chip and used later (for example as the MTD device name in string operations), which can cause a NULL pointer dereference."
+    }
+  ],
+  "suggested_fix": "Check the return value of devm_kasprintf() right after the call and return -ENOMEM if it is NULL, for example: if (!pdata->name) return -ENOMEM;"
+}

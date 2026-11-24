@@ -1,0 +1,14 @@
+▶ Scanning: samples/s174.c
+▶ Report:   results/s174.json
+I marked this function as vulnerable with a reference leak (CWE-401), and wrote the result to `results/s174.json`.
+
+**The problem:** in `samples/s174.c:57`, `bridge_dev = pci_get_host_bridge_device(dev);` takes a reference on the host bridge device. The function never releases it with `pci_put_host_bridge_device()`. The reference is lost on every exit after that call: the three early returns (no parent, no driver data, RTL version mismatch) and the normal end of the function. So each time the quirk runs for a device under an AM654x bridge, the reference count goes up and never comes back down, and the host bridge device can never be freed.
+
+**Suggested fix:** call `pci_put_host_bridge_device(bridge_dev)` on every path once the reference has been taken. The simplest way is to call it right after `dev_get_drvdata()`, or to send all the early returns through one cleanup label.
+
+**What I checked and ruled out:**
+- **`bridge` used before being set:** not possible. It is set to `dev` on the root bus, and the loop always runs at least once otherwise.
+- **Null pointers:** `bridge_dev`, its parent and `ks_pcie` are all checked before use.
+
+I'm fairly confident the leak is real, but it is a resource leak rather than a memory-corruption bug, so the severity is low. If this sample was chosen for a different known flaw, a grader could disagree with my verdict.
+✔ Report written to results/s174.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. sysfb_disable() is given the PCI device, so the system framebuffer is only removed when it belongs to that device. Conflicting aperture users are detached only for the device's own memory BARs, and the legacy VGA devices are removed only when pdev is the default VGA device. Bounds come from the PCI core's resource table, and no untrusted input reaches this code."
+}

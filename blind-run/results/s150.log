@@ -1,0 +1,10 @@
+▶ Scanning: samples/s150.c
+▶ Report:   results/s150.json
+I marked the function as vulnerable: a use-after-free (CWE-416) in its error-handling path, and wrote the answer to `results/s150.json`. This depends on how `btrfs_orig_bbio_end_io()` behaves, and that function isn't in the file, so I'm relying on how btrfs normally implements it.
+
+**The problem:** when the bio has been split (`map_length < length`) and a later step fails, the cleanup at `samples/s150.c:96-106` ends the two pieces in the wrong order:
+1. It ends the remaining original bbio first (`btrfs_orig_bbio_end_io(remaining)`, line 103). If that drops the original's count of pending I/Os to zero, the original is completed and can be freed.
+2. It then ends the split copy (`btrfs_orig_bbio_end_io(bbio)`, line 106). The copy still points back to the original through `bbio->private`, so this writes the error status into memory that may already be freed. It also lowers the original's count again, which can complete it a second time.
+
+**Suggested fix:** end the split copy first, so it passes the error to the original while the original still exists. Then end the original last. Another option is to set the error on the original and lower its count once, in the right order, so nothing touches it after it might be freed.
+✔ Report written to results/s150.json

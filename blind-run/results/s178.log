@@ -1,0 +1,11 @@
+▶ Scanning: samples/s178.c
+▶ Report:   results/s178.json
+I found no vulnerability in `fsnotify_recalc_mask()` in `samples/s178.c`, and wrote that verdict to `results/s178.json` (`is_vulnerable: false`, no CWE, no vulnerable statements).
+
+- **Null check:** it returns early if the connector pointer is NULL.
+- **Locking:** the mask is recalculated while `conn->lock` is held.
+- **Child update:** it checks whether the parent has just started watching its children, and only then sets the children's flags. That walk happens after the lock is released, so a large directory can't stall the CPU while a spinlock is held.
+- **Stale flags:** the comment says leftover flags are cleared later in `__fsnotify_parent()` when the parent stops watching. That function isn't in this file, so I took the comment at its word.
+
+This judgement covers only this function. The helpers it calls, such as `__fsnotify_recalc_mask()`, aren't in the file, so any race inside them is outside what I could check.
+✔ Report written to results/s178.json

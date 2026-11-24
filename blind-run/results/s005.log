@@ -1,0 +1,9 @@
+▶ Scanning: samples/s005.c
+▶ Report:   results/s005.json
+I've written the result to `results/s005.json`: the function is vulnerable to a **use-after-free (CWE-416)**.
+
+- **What happens:** `vcap_api_encode_rule_test` frees the rule with `vcap_free_rule(rule)` (line 116). Afterwards it still reads fields from that rule: `list_empty(&rule->keyfields)` at line 122 and `list_empty(&rule->actionfields)` at line 124. Both reads touch memory that has already been freed. The comment just above them even says the memory "should not be accessible anymore."
+- **Suggested fix:** Remove those checks after the free, or move them before the call to `vcap_free_rule()`. The `KUNIT_EXPECT_PTR_NE(test, NULL, rule)` check at line 121 doesn't access the freed memory, but it proves nothing either, so it can go too.
+
+This is a KUnit test function rather than code that runtime input can reach, so the practical impact is limited. It is still a real read of freed memory, which tools like KASAN would report.
+✔ Report written to results/s005.json

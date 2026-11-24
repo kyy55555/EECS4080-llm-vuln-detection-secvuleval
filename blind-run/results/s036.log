@@ -1,0 +1,12 @@
+▶ Scanning: samples/s036.c
+▶ Report:   results/s036.json
+I judged `f2fs_handle_critical_error` in `samples/s036.c` **not vulnerable**. The answer is written to `results/s036.json` with `cwe` set to null and an empty `vulnerable_statements` list.
+
+The function avoids the known problems in this error-handling path:
+- **No unsafe read-only switch:** it doesn't set `SB_RDONLY` directly. Setting that flag without holding the `s_umount` lock can confuse `freeze_super()` and cause deadlocks. Instead it sets `CP_ERROR_FLAG`, which already stops all writes to the filesystem.
+- **No read-only on shutdown:** when the reason is a shutdown, it returns early without making the filesystem read-only. This matters because going read-only skips `thaw_super`, which can hang the system.
+- **No panic during shutdown or reboot:** with the `errors=panic` mount option, it only panics if the system isn't going down and the filesystem isn't already shut down. This avoids a panic during `reboot -f` after the underlying device is gone.
+- **Safe in interrupt context:** when called from an interrupt, it hands the stop-reason recording to a work queue (`schedule_work`) instead of doing it directly.
+
+These guards look like the fixed form of this function, not the older code that had these bugs. I worked only from this one file, as instructed.
+✔ Report written to results/s036.json

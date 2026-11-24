@@ -1,0 +1,8 @@
+▶ Scanning: samples/s010.c
+▶ Report:   results/s010.json
+I wrote the verdict to `results/s010.json`: the function is vulnerable, a NULL pointer dereference (CWE-476).
+
+- **Where:** `samples/s010.c:30`, the line `*out_data = kcalloc(*out_size, sizeof(**out_data), GFP_KERNEL);`
+- **Problem:** the code never checks whether `kcalloc()` returned NULL. By that point `*out_address` and `*out_size` already describe the larger range. The function returns `void`, so the caller can't tell the allocation failed. The caller is then likely to read or write the data through that NULL buffer. I couldn't confirm this last step because the calling code isn't in the file.
+- **Suggested fix:** check what `kcalloc()` returns. If it fails, either go back to the original address, size and buffer, or change the function to return an error such as `-ENOMEM` and have callers check it before using `*out_data`.
+✔ Report written to results/s010.json

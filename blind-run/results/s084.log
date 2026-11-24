@@ -1,0 +1,12 @@
+▶ Scanning: samples/s084.c
+▶ Report:   results/s084.json
+I judged `xe_preempt_fence_arm` in `samples/s084.c` **not vulnerable** and wrote that to `results/s084.json` (`cwe` null, no vulnerable statements).
+
+The function does four things, and each looks correct on its own:
+- **Removes the fence from its list:** `list_del_init(&pfence->link)` takes the fence off its pre-allocation list and resets the link, so a later unlink won't touch freed memory.
+- **Takes a reference on the queue:** `xe_exec_queue_get(q)` runs before the queue pointer is stored, so the queue can't be freed while the fence still points to it.
+- **Sets up the lock first:** the fence's own spinlock is initialized before it is passed to `dma_fence_init`.
+- **Returns the embedded fence:** `&pfence->base` points into the same object, so it is safe to return.
+
+One limit: I only had this file, so I couldn't check the code that drops that queue reference later. A missing or doubled release there would be a bug elsewhere, not in this function.
+✔ Report written to results/s084.json

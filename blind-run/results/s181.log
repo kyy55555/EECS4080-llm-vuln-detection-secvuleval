@@ -1,0 +1,10 @@
+▶ Scanning: samples/s181.c
+▶ Report:   results/s181.json
+I marked the function as vulnerable to an out-of-bounds read (CWE-125) and wrote the answer to `results/s181.json`.
+
+**The problem:** the value `quirk` can be set by the user through the `quirk_override` module parameter. It can also come from firmware data (the ACPI DSM method or the DMI match table). Nothing checks that `BYT_CHT_ES8316_MAP(quirk)` is below 2, the size of `mic_name`. If it is 2 or more, `mic_name[BYT_CHT_ES8316_MAP(quirk)]` reads past the end of the array. That stray value is then used as a string pointer in `snprintf`, which can leak or crash on arbitrary kernel memory. This happens twice: at line 131 (building `components_string`) and at line 136 (building `long_name`). Both lines have the same text, so the JSON lists the statement once.
+
+**Suggested fix:** once `quirk` is final (after any override), check the map value against `ARRAY_SIZE(mic_name)`. If it is out of range, either fail the probe with `-EINVAL` and clean up, or warn and fall back to a valid default map.
+
+I didn't count one other oddity as a vulnerability: line 133 comments out the `#if`, leaving a stray `#endif` at line 138. That looks like an artifact of how the sample was prepared, and as written it would not compile.
+✔ Report written to results/s181.json

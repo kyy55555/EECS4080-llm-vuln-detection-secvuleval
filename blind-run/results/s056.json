@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The rebuild is serialized by xdp_state_lock. The coalesce buffer is allocated after ice_vsi_cfg_def() using the new num_q_vectors and is freed on every path. If ice_vsi_cfg_def() fails, the function jumps straight to unlock and does not call ice_vsi_decfg() a second time, so the already-released resources are not freed twice. Later failures do call ice_vsi_decfg() once."
+}

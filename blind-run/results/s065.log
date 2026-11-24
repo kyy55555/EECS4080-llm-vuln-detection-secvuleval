@@ -1,0 +1,11 @@
+▶ Scanning: samples/s065.c
+▶ Report:   results/s065.json
+I found no vulnerability in `copy_fd_bitmaps` and wrote that verdict to `results/s065.json`: `is_vulnerable: false`, `cwe: null`, no vulnerable statements.
+
+**Why it's safe:**
+- **`open_fds` and `close_on_exec`:** each copies exactly `copy_words * BITS_PER_LONG` bits from the old table. Everything after that, up to the new table's size (`nwords * BITS_PER_LONG`), is set to zero.
+- **`full_fds_bits`:** this bitmap has one bit per word of `open_fds`, so copying `copy_words` bits and extending to `nwords` bits is the correct size.
+- **No stale bits:** because it uses `bitmap_copy_and_extend`, nothing beyond the copied range carries over into the new table. This appears to be the patched form of the function. Older kernels did this with `memcpy`/`memset` sized in bytes. I recall a bug where `close_range()` with `CLOSE_RANGE_UNSHARE` could leave these bitmaps inconsistent, but that's from memory, not from this file.
+
+The one thing this file can't confirm is that the caller passes a `copy_words` no larger than either table's word count. I noted that limit in the `suggested_fix` field.
+✔ Report written to results/s065.json

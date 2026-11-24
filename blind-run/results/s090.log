@@ -1,0 +1,16 @@
+▶ Scanning: samples/s090.c
+▶ Report:   results/s090.json
+I judged `snd_cht_mc_probe` in `samples/s090.c` **not vulnerable** and wrote `results/s090.json` with `is_vulnerable: false`, no CWE and an empty statement list.
+
+The usual weak spots in this kind of sound-card setup function are all handled here:
+- **Possible empty pointer (NULL dereference):** the loop that finds the codec entry checks `cht_dailink[i].codecs->name` is set before comparing it with `strcmp` (lines 20–21).
+- **Reference leak:** the ACPI device that `acpi_dev_get_first_match_dev()` returns is always released with `acpi_dev_put()` (line 34), which is safe to call even when no device was found.
+- **Buffer overflow:** the codec name is written with `snprintf`, which is limited to the size of `drv->codec_name` (line 30).
+- **Error handling:** every failure path returns an error code, and the memory is freed automatically when the driver detaches (it's allocated with `devm_kzalloc`).
+
+This is a judgement call:
+- **Possible patched version:** the NULL check and the reference release look like the fixes for known bugs in drivers like this one. So this sample is likely the patched version.
+- **Leftover weakness:** line 32 stores a pointer to `drv->codec_name` in the global `cht_dailink` table. That memory is freed when the driver detaches, so the table is left pointing at freed memory. If the driver probes again, the loop at lines 19–25 compares against it. I didn't count this as the target flaw. I mentioned it in the suggested fix as a hardening step: keep the name in a static buffer instead.
+
+If the study is pairing vulnerable and fixed versions, that leftover pointer is the only thing I'd revisit.
+✔ Report written to results/s090.json

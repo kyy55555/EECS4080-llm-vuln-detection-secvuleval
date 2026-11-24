@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "setting = pdesc->mux_setting;",
+      "reason": "pin_desc_get() can return NULL when the pin number is not registered with the pin controller (it is a radix tree lookup). The return value is dereferenced here without a NULL check, which causes a NULL pointer dereference and a kernel oops."
+    }
+  ],
+  "suggested_fix": "Check the result of pin_desc_get() before using it. For example, add 'if (!pdesc) return -EINVAL;' right after the lookup and before reading pdesc->mux_setting."
+}

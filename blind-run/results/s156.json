@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-20",
+  "vulnerable_statements": [
+    {
+      "statement": "if (__get_user(uprobes[i].offset, uoffsets + i)) {",
+      "reason": "uoffsets is an attacker-controlled pointer taken from the bpf_attr, and access_ok() is never called on it. __get_user() skips the address-range check, so a kernel address can be passed in and kernel memory is read as if it were user memory."
+    },
+    {
+      "statement": "if (uref_ctr_offsets && __get_user(uprobes[i].ref_ctr_offset, uref_ctr_offsets + i)) {",
+      "reason": "Same problem: uref_ctr_offsets comes from the user and is read with __get_user() without access_ok(), so it can point into kernel memory."
+    },
+    {
+      "statement": "if (ucookies && __get_user(uprobes[i].cookie, ucookies + i)) {",
+      "reason": "Same problem: ucookies comes from the user and is read with __get_user() without access_ok(), so it can point into kernel memory."
+    }
+  ],
+  "suggested_fix": "Use get_user() instead of __get_user() for all three user arrays, because get_user() checks the address range itself. Another option is to call access_ok() on uoffsets, uref_ctr_offsets and ucookies for cnt elements before the loop, or to copy each whole array with copy_from_user(). This is what the upstream fix did: it switched these reads to get_user()."
+}

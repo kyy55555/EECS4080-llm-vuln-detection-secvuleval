@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-362",
+  "vulnerable_statements": [
+    {
+      "statement": "if (is_inode_flag_set(inode, FI_COMPRESS_RELEASED)) {",
+      "reason": "After taking inode_lock, the function only rejects compress-released inodes. It does not check whether the inode is an atomic-write file. An atomic-write file has its uncommitted data staged in a COW inode. Defragmenting it anyway races with the atomic write and commit path. The loop dirties pages with set_page_dirty and set_page_private_gcing, then filemap_fdatawrite writes them back. This happens while atomic-write state is active, which can corrupt atomic-write semantics or data, or mishandle the COW inode."
+    }
+  ],
+  "suggested_fix": "Under inode_lock, also reject atomic-write files. For example: if (is_inode_flag_set(inode, FI_COMPRESS_RELEASED) || f2fs_is_atomic_file(inode)) { err = -EINVAL; goto unlock_out; }. Because the check is made while holding inode_lock, the atomic-write state cannot change between the check and the defragment work."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The handler returns early when the INTSTS_G read fails or reads 0. 'stat' is set to 0 before the SYSSTAT read, so a failed read cannot log an uninitialized value. The HPD path checks that hpd_pin is valid and that tc->bridge.dev and tc->aux.drm_dev are non-NULL before calling drm_kms_helper_hotplug_event(), so an interrupt that arrives before the bridge is attached cannot dereference NULL. As a hardening step, the return value of regmap_read(SYSSTAT) could be checked so the log line is not misleading."
+}

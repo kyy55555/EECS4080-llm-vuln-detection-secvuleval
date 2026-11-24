@@ -1,0 +1,10 @@
+▶ Scanning: samples/s183.c
+▶ Report:   results/s183.json
+I wrote the verdict to `results/s183.json`: the function is vulnerable to a **double free (CWE-415)**.
+
+- **The bug:** If `aac_comm_init()` fails (`samples/s183.c:135`) or `aac_fib_setup()` fails (`samples/s183.c:142`), the function calls `kfree(dev->queues)` but doesn't set `dev->queues` to NULL, then returns NULL.
+- **Why it matters:** The function that calls this one (`aac_probe_one`, the driver's probe routine) frees `dev->queues` again when it cleans up after a failure. That second free hits memory that was already released. This part comes from what I know of the aacraid driver, not from the sample, since the caller isn't in the file.
+- **Suggested fix:** Remove the `kfree()` calls here and let the caller free the memory once, or set `dev->queues = NULL` right after each `kfree()`.
+
+Both lines in the JSON have the same text, `kfree(dev->queues);`, because the same statement appears on both error paths. The reason given for each says which path it belongs to.
+✔ Report written to results/s183.json

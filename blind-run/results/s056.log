@@ -1,0 +1,10 @@
+▶ Scanning: samples/s056.c
+▶ Report:   results/s056.json
+I judged `ice_vsi_rebuild` in `samples/s056.c` **not vulnerable** and wrote that to `results/s056.json`. It has `is_vulnerable: false`, `cwe: null` and an empty statement list.
+
+- **Locking:** the whole rebuild runs while holding `xdp_state_lock`, and every exit path goes through `unlock`, so the lock is always released.
+- **Coalesce buffer:** `coalesce` is allocated with `vsi->num_q_vectors` after `ice_vsi_cfg_def()` has run, so its size matches the new configuration. It is freed on every path once it has been allocated.
+- **Error paths:** if `ice_vsi_cfg_def()` fails, the code jumps straight to `unlock` and doesn't call `ice_vsi_decfg()` again. That avoids freeing the same resources twice. Failures after that point call `ice_vsi_decfg()` exactly once, through the `decfg` label.
+
+The main assumption is that `ice_vsi_cfg_def()` cleans up after itself when it fails. Its code isn't in this file, so I couldn't confirm that.
+✔ Report written to results/s056.json

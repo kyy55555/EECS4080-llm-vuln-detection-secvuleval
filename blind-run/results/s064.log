@@ -1,0 +1,8 @@
+▶ Scanning: samples/s064.c
+▶ Report:   results/s064.json
+The function is vulnerable: it has an out-of-bounds read (CWE-125). I wrote the verdict to `results/s064.json`.
+
+**Where it happens:** `samples/s064.c:30-31`, in the `DATA_EQU_PREV` branch. That branch copies the previous register value with `mc_data[i] = mc_data[i-1]`. The flag that selects the branch, `uc_pre_reg_data`, comes from the VBIOS memory table. Nothing stops the very first entry (`i == 0`) from carrying it. Because `i` is a `uint32_t`, `i-1` then wraps to `0xFFFFFFFF`, and the code reads memory far outside `mc_data[]`.
+
+**Suggested fix:** only take that branch when a previous entry exists (for example, guard it with `if (i)`), or reject the table as invalid when entry 0 is marked `DATA_EQU_PREV`. The JSON also suggests two extra checks: that `table->last` doesn't exceed the array sizes, and that `j` stays inside the register data block.
+✔ Report written to results/s064.json

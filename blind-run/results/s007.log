@@ -1,0 +1,10 @@
+▶ Scanning: samples/s007.c
+▶ Report:   results/s007.json
+I judged this function vulnerable to a NULL pointer dereference (CWE-476) and wrote the result to `results/s007.json`.
+
+**The problem:** `samples/s007.c:6` reads `fou_from_sock(sk)->protocol` without checking the pointer first. `fou_from_sock()` returns `sk->sk_user_data`, which is set to NULL when the tunnel is torn down. Incoming packets can still reach this function on the same socket during that window. If one arrives then, the kernel follows a NULL pointer and crashes.
+
+The NULL return is inferred from what I know of the FOU code, not shown in this file. The task limited me to this one file, so I couldn't read `fou_from_sock()` or the teardown code to confirm it.
+
+**Suggested fix:** Store `fou_from_sock(sk)` in a local variable and return NULL right away if it is NULL. Only read `->protocol` after that check. Other FOU/GUE functions that call `fou_from_sock()` should get the same check.
+✔ Report written to results/s007.json

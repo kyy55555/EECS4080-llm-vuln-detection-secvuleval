@@ -1,0 +1,8 @@
+▶ Scanning: samples/s032.c
+▶ Report:   results/s032.json
+I found no vulnerability in this function and wrote that verdict to `results/s032.json`.
+
+The function reads a channel number from hardware and uses it as an index into `df_v1_7_channel_number[]`. Before that read, it checks the value against `ARRAY_SIZE(df_v1_7_channel_number)` at `samples/s032.c:6`, and any out-of-range value is reset to 0. Negative values are caught too: because `ARRAY_SIZE` is an unsigned `size_t`, a negative `int` turns into a very large number in the comparison and fails the check. So the array read can't go out of bounds.
+
+No fix is needed. For readability, the variable could be declared `unsigned`, or the code could test for negative values explicitly.
+✔ Report written to results/s032.json

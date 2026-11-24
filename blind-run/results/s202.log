@@ -1,0 +1,9 @@
+▶ Scanning: samples/s202.c
+▶ Report:   results/s202.json
+I found no vulnerability in this function and wrote that verdict to `results/s202.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements listed).
+
+- **Null pointer:** the function stops right away if `filter` is NULL (`if (!filter) return;`), so it can't dereference a null pointer. That check is the fix for the likely known bug here, a missing null check before `filter` is used.
+- **Array bounds:** each row (phase) reads only its own `taps` coefficients. The odd coefficient is read only when `2*pair + 1 < taps`. When the tap count is odd, the last odd slot is set to 0 instead of being read past the end of the row. So the function reads `(NUM_PHASES/2 + 1) * taps` entries in total.
+
+One assumption: callers must pass a coefficient table of at least `(NUM_PHASES/2 + 1) * taps` entries. I couldn't check this, because the callers aren't in this file.
+✔ Report written to results/s202.json

@@ -1,0 +1,9 @@
+▶ Scanning: samples/s098.c
+▶ Report:   results/s098.json
+I marked this function as vulnerable and wrote the result to `results/s098.json`, with CWE-401 (memory leak) as the CWE.
+
+1. **Cacheable mapping of shared memory** (`samples/s098.c:12`): the Command DB region is shared with firmware and other processors, but it's mapped with `MEMREMAP_WB`, which allows normal cached access. That lets the CPU read the region speculatively and keep cached copies of memory that shouldn't be accessed that way. This can cause faults or stale data. The fix is to map it with `MEMREMAP_WC` (uncached) instead.
+2. **Mapping leaked on the error path** (`samples/s098.c:21`): if the magic-number check fails, the function returns `-EINVAL` without calling `memunmap()`. The mapping leaks, and the global `cmd_db_header` still points at the invalid mapping. The fix is to use `devm_memremap()`, or to unmap and set `cmd_db_header` to NULL before returning.
+
+The CWE label is a judgement call. CWE-401 fits the leak exactly, but the cached mapping is probably the more serious problem, and no CWE matches it cleanly. If the expected answer is based on the cached-mapping issue, the CWE may not match.
+✔ Report written to results/s098.json

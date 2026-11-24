@@ -1,0 +1,9 @@
+▶ Scanning: samples/s051.c
+▶ Report:   results/s051.json
+I judged `nxp_fspi_fill_txfifo` in `samples/s051.c` not vulnerable, and wrote that verdict to `results/s051.json`.
+
+- **Main loop (lines 16–26):** it only runs over `ALIGN_DOWN(op->data.nbytes, 8)` bytes. The two 4-byte reads at `buf + i` and `buf + i + 4` therefore stay inside the buffer.
+- **Leftover bytes (lines 28–43):** each `memcpy` is capped with `min_t(int, 4, remaining - j)`. When the length isn't a multiple of 4, the last copy is shortened, so it never reads past `nbytes` from the caller's buffer. A plain 4-byte copy here would read past the end of the buffer (CWE-125). The cap is what prevents that.
+
+**Minor non-security point:** `data` isn't reset to 0 between words. When the last word is short, its unused bytes keep data from the previous word of the same buffer. Those bytes go into the FIFO padding, not to another user, so it doesn't count as a leak. I suggested resetting `data` before each copy as optional cleanup.
+✔ Report written to results/s051.json

@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-787",
+  "vulnerable_statements": [
+    {
+      "statement": "for (i = 0; i < intsize; i++) {",
+      "reason": "intsize is read from the device tree's \"#interrupt-cells\" property and is never checked against MAX_PHANDLE_ARGS, the fixed size of out_irq->args. If a device tree sets a large #interrupt-cells value, the loop runs past the end of the array."
+    },
+    {
+      "statement": "res = of_property_read_u32_index(device, \"interrupts\",",
+      "reason": "Writes to out_irq->args + i for every i < intsize. When intsize > MAX_PHANDLE_ARGS, this writes past the end of the fixed-size args[] array (stack or heap out-of-bounds write)."
+    },
+    {
+      "statement": "addr = of_get_property(device, \"reg\", NULL);",
+      "reason": "The length of the \"reg\" property is thrown away, and the raw pointer goes to of_irq_parse_raw. That function may read #address-cells words from it, which can be more than the property actually holds (out-of-bounds read)."
+    }
+  ],
+  "suggested_fix": "After reading #interrupt-cells, reject values larger than MAX_PHANDLE_ARGS, e.g. if (WARN_ON(intsize > MAX_PHANDLE_ARGS)) { res = -EINVAL; goto out; }, before setting args_count and copying. For the reg property, get its length with of_get_property(device, \"reg\", &len). Copy at most min(len, sizeof(addr_buf)) bytes into a zero-initialized local buffer of MAX_PHANDLE_ARGS cells, and pass that buffer to of_irq_parse_raw instead of the raw property pointer."
+}

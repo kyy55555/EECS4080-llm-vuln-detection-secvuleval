@@ -1,0 +1,12 @@
+▶ Scanning: samples/s040.c
+▶ Report:   results/s040.json
+I marked the sample as **vulnerable** and wrote the result to `results/s040.json`. The weakness is a NULL pointer dereference (CWE-476).
+
+The file contains only a three-line helper, `fou_from_sock`, which does `return sk->sk_user_data;`.
+
+- **The problem:** `sk_user_data` is shared data whose readers rely on RCU (the kernel's lock-free read mechanism) for safe access, but this line reads it as a plain load. When the tunnel socket is released, the kernel can set the pointer to NULL while packet-receive code is still running on it.
+- **What goes wrong:** the helper gives callers no hint that the result can be NULL. If a caller uses the result without checking, the kernel can crash on a NULL pointer, or read memory that has already been freed.
+- **Suggested fix:** read the pointer with `rcu_dereference_sk_user_data(sk)`, and have every caller check for NULL and stop processing if it is.
+
+**Caveat:** this verdict depends on context outside the file. The helper is harmless on its own; the danger depends on how other kernel code clears and reads this pointer. I filled that in from what I know of the kernel's FOU tunnel code, not from anything in the sample. If the study counts only what the sample itself shows, this verdict is less certain.
+✔ Report written to results/s040.json

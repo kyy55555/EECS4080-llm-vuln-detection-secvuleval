@@ -1,0 +1,12 @@
+▶ Scanning: samples/s160.c
+▶ Report:   results/s160.json
+I judged `of_irq_parse_one` in `samples/s160.c` to be vulnerable: it can write past the end of a fixed-size array (CWE-787). The answer is saved to `results/s160.json`.
+
+**Main problem (lines 29–45):** The function reads `intsize` from the parent node's `#interrupt-cells` device-tree property and never checks it against `MAX_PHANDLE_ARGS`, the size of the `out_irq->args[]` array. The loop `for (i = 0; i < intsize; i++)` then writes into `out_irq->args + i` through `of_property_read_u32_index(...)`. If a device tree sets a large `#interrupt-cells`, those writes go past the end of the array.
+
+**Second, less certain problem (line 15):** `of_get_property(device, "reg", NULL)` throws away the property's length and passes the raw pointer to `of_irq_parse_raw`. That function may read more address cells than the `reg` property actually holds, which would be an out-of-bounds read. I'm less sure of this one because `of_irq_parse_raw` isn't in this file, so I hedged it in the JSON.
+
+**Suggested fix:**
+- After reading `#interrupt-cells`, add `if (WARN_ON(intsize > MAX_PHANDLE_ARGS)) { res = -EINVAL; goto out; }`.
+- For `reg`, get its length and copy at most that many bytes into a zero-initialized local buffer. Pass the buffer to `of_irq_parse_raw` instead of the raw pointer.
+✔ Report written to results/s160.json

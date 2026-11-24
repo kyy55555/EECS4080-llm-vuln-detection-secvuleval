@@ -1,0 +1,16 @@
+▶ Scanning: samples/s211.c
+▶ Report:   results/s211.json
+I judged `snd_byt_rt5640_mc_probe` in `samples/s211.c` **not vulnerable** and wrote that verdict to `results/s211.json`. `cwe` is null and `vulnerable_statements` is empty.
+
+Why I found no real flaw:
+- **Codec name lookup:** the loop checks `num_codecs` before it reads `codecs->name`, so it never follows a null pointer.
+- **String writes:** the codec name, components and long name are all built with `snprintf` sized to their buffers, so they can't overflow.
+- **Reference counting:** `acpi_dev_put(adev)` releases the ACPI device after its last use. `get_device(codec_dev)` takes a reference, and every later error path ends at `put_device` under `err_device`.
+- **Error cleanup:** the error labels undo the setup in reverse order: software node, then driver GPIOs, then the device reference.
+
+Two minor points:
+- **Hardening suggestion (in the JSON's fix field):** `map_name[BYT_RT5640_MAP(...)]` has 5 entries, but the 4-bit mask can produce an index up to 15. Only the root-set `quirk_override` module parameter or a bad entry in the driver's own quirk table could push it out of range, so I didn't count it as a vulnerability.
+- **Sample won't compile as given:** the `#if` on line 207 has been commented out, but its `#endif` on line 212 is still there. This looks like an editing mistake in the sample, not a security issue.
+
+Possible cleanup leak: if getting the `headset-mic-detect` GPIO fails, the code jumps to `err_device` and skips removing the driver GPIOs it just added. That's a small leak, not a security problem, and I left it out of the JSON.
+✔ Report written to results/s211.json

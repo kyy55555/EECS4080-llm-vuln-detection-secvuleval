@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-129",
+  "vulnerable_statements": [
+    {
+      "statement": "otg_master = resource_get_otg_master_for_stream(&state->res_ctx, state->streams[phantom_stream_idx]);",
+      "reason": "phantom_stream_idx comes from resource_stream_to_stream_idx(), which returns -1 when the paired phantom stream is not in state->streams (for example, a NULL or stale paired_stream). The index is never checked, so state->streams[-1] is read out of bounds. The garbage pointer is then passed to resource_get_otg_master_for_stream() and dereferenced."
+    }
+  ],
+  "suggested_fix": "Check the result of resource_stream_to_stream_idx() before using it as an array index. For example, add 'if (phantom_stream_idx < 0) continue;' (and optionally check that it is below state->stream_count) before accessing state->streams[phantom_stream_idx]. Checking that paired_stream is non-NULL first would also help."
+}

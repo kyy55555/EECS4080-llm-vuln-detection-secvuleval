@@ -1,0 +1,11 @@
+▶ Scanning: samples/s050.c
+▶ Report:   results/s050.json
+I marked the function as vulnerable: a missing NULL check (CWE-476), with the verdict and fix written to `results/s050.json`. This is a judgement from reading the file alone; I didn't compile or run anything.
+
+- **The flaw:** at `samples/s050.c:30`, when the requested address range has to be widened, the function allocates a new buffer with `kcalloc`. That allocation can fail and return NULL. The only check after it is `ASSERT(*out_data)` on line 31.
+- **Why the ASSERT doesn't help:** in this driver code, ASSERT only logs a warning and lets execution continue. So on a failed allocation, the function returns a NULL buffer as if everything worked.
+- **Consequence:** the caller then reads or writes through that NULL pointer, which crashes the kernel.
+- **Suggested fix:** check the `kcalloc` result explicitly. If it fails, either go back to the original, unwidened range (the caller's own address, size and buffer) or return an error that callers must check.
+
+I didn't see any other issue in the function itself. Whether the rest of the buffer handling is safe depends on code outside this file, which I wasn't allowed to read.
+✔ Report written to results/s050.json

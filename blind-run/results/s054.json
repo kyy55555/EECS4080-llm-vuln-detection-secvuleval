@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-908",
+  "vulnerable_statements": [
+    {
+      "statement": "err = vpu_dec_start(vpu, data, 2);",
+      "reason": "The local array 'unsigned int data[2]' is never initialized in this function, yet it is passed as the IPI message payload to the VPU/SCP firmware. Uninitialized kernel stack contents are sent to the co-processor (information leak), and the firmware acts on garbage parameters, which can cause undefined decoder behavior."
+    }
+  ],
+  "suggested_fix": "Initialize the array before use (e.g. 'unsigned int data[2] = { 0 };' or memset), and fill in the actual parameters the firmware expects for a single-core decode start. Additionally, validate the bitstream length so that buf[nal_start_idx] stays within bs->size."
+}

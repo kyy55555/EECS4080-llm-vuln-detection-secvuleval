@@ -1,0 +1,12 @@
+▶ Scanning: samples/s193.c
+▶ Report:   results/s193.json
+I found a vulnerability in this function and wrote the answer to `results/s193.json`: a use-after-free (CWE-416) caused by a reference-count error.
+
+**The vulnerable line:** `platform_device_put(pdev);` under the `undo_platform_dev_alloc` label (`samples/s193.c:110`).
+
+**Why it's a problem:** `pdev` is the device being probed, and the driver core owns it. The probe function never takes its own reference on it. But every error path after the `syscfg-reg` lookup ends at this label and drops a reference anyway. That leaves the reference count too low, so the device can be freed while the driver core is still using it.
+
+**Suggested fix:** Remove `platform_device_put(pdev)` and the `undo_platform_dev_alloc` label. For errors that happen before any reset line is deasserted, return the error code directly.
+
+The fix text also mentions a smaller cleanup issue, which I didn't list as a vulnerable statement: if `st_dwc3_drd_init()` fails, the child devices created by `of_platform_populate()` are never removed. Calling `of_platform_depopulate()` on that path would fix it.
+✔ Report written to results/s193.json

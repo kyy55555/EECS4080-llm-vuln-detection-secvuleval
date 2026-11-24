@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "!link->link_enc->funcs->validate_output_with_stream(",
+      "reason": "link->link_enc is dereferenced without a NULL check. A link's encoder may not be assigned (e.g. with dynamic link-encoder assignment or links whose encoder has not yet been bound), so link_enc can be NULL and this dereference crashes the kernel (NULL pointer dereference)."
+    }
+  ],
+  "suggested_fix": "Check that link->link_enc is non-NULL before using it, e.g. `if (link->ep_type == DISPLAY_ENDPOINT_PHY && link->link_enc && !link->link_enc->funcs->validate_output_with_stream(link->link_enc, stream))`. Alternatively, get the encoder through the proper helper (such as link_enc_cfg_get_link_enc) and return an error status or skip encoder validation when no encoder is assigned."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix needed. The function only checks the DASD_CQR_SUPPRESS_FP flag to decide whether to log an error, then marks the ERP request as failed through dasd_3990_erp_cleanup. erp->startdev is always set for ERP requests, and there is no memory handling, indexing or user-controlled data here. At most, the log message could be reworded to say 'File Protected' instead of describing the error as a hardware error."
+}

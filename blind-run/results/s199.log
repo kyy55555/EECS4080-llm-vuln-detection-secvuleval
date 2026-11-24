@@ -1,0 +1,13 @@
+▶ Scanning: samples/s199.c
+▶ Report:   results/s199.json
+I wrote `results/s199.json`. My verdict is that the function is vulnerable to a NULL pointer dereference (CWE-476).
+
+- **`obj`:** `amdgpu_ras_find_obj()` can return NULL, for example when no RAS object is registered for the NBIO block. The code never checks for that. It then uses `obj` in `obj->err_data.ue_count += ...`, `obj->err_data.ce_count += ...` and the two `dev_info` messages.
+- **`ras`:** `amdgpu_ras_get_context()` can also return NULL. The code reads `ras->disable_ras_err_cnt_harvest` without checking it first.
+
+Both happen inside an interrupt handler, so a crash there would take down the kernel.
+
+**Suggested fix:** change the condition to `if (ras && !ras->disable_ras_err_cnt_harvest && obj)`. That skips counting and logging the errors when either pointer is missing. Clearing the interrupt and resetting the GPU still happen as before.
+
+The decision rests on my reading of this one file, as instructed. The callee bodies aren't in it, so I didn't check them; the NULL returns are what I expect from these functions' usual behavior.
+✔ Report written to results/s199.json

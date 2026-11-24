@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "nfs4_put_stid(&dp->dl_stid);",
+      "reason": "This drops the callback's reference to the delegation before the function is finished with it. If this was the last reference, the delegation (dp) is freed, and ncf is embedded inside dp, so it is freed too."
+    },
+    {
+      "statement": "clear_bit(CB_GETATTR_BUSY, &ncf->ncf_cb_flags);",
+      "reason": "This writes to ncf->ncf_cb_flags, which is inside the delegation that may already have been freed by the nfs4_put_stid() call above (a use-after-free write)."
+    },
+    {
+      "statement": "wake_up_bit(&ncf->ncf_cb_flags, CB_GETATTR_BUSY);",
+      "reason": "This uses the address of a field in memory that may already be freed. The wait-queue lookup and wake-up then work on a stale object."
+    }
+  ],
+  "suggested_fix": "Finish with the embedded ncf fields before dropping the reference. Call clear_bit(CB_GETATTR_BUSY, &ncf->ncf_cb_flags) and wake_up_bit(&ncf->ncf_cb_flags, CB_GETATTR_BUSY) first, and call nfs4_put_stid(&dp->dl_stid) last. That way the delegation stays alive while its fields are being accessed."
+}

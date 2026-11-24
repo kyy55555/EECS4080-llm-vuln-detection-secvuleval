@@ -1,0 +1,10 @@
+▶ Scanning: samples/s043.c
+▶ Report:   results/s043.json
+I found no vulnerability in `dmub_abm_set_pipe` and saved that verdict to `results/s043.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why it looks safe:
+- **No stack data leaks out.** The `cmd` union is zeroed with `memset` before any fields are set, so no leftover stack data ends up in the command sent to the display firmware.
+- **No caller-controlled sizes or indexes.** The function only copies the four `uint32_t` arguments into fixed fields of the command. `payload_bytes` comes from a fixed `sizeof`, so no caller-supplied length or array index is used here.
+
+One limit: `abm` is dereferenced without a NULL check. Whether that matters depends on the callers, which aren't in this file. Checking `abm` for NULL and checking `otg_inst`/`panel_inst` against hardware limits would be reasonable hardening, but nothing in this file shows an exploitable flaw.
+✔ Report written to results/s043.json

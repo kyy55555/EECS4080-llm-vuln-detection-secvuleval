@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The index calculations are guarded by the ternary checks on fclks->num_levels (> 2, > 1, > 0), so a small or zero num_levels can no longer cause an unsigned underflow that produces an out-of-bounds index into fclks->data[]. With zero levels every index becomes 0, which is inside the fixed-size data array. As extra hardening, the function could return early when num_levels is 0 and clamp num_levels to the size of the data array."
+}

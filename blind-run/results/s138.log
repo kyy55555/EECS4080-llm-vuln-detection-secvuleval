@@ -1,0 +1,10 @@
+▶ Scanning: samples/s138.c
+▶ Report:   results/s138.json
+I've written the answer to `results/s138.json`: the function is **vulnerable** (CWE-457, use of an uninitialized variable).
+
+**Where it goes wrong (`samples/s138.c:33-36`):** when the device is associated with the target BSSID, the code builds a `struct iwl_mvm_ftm_iter_data target` on the stack but only sets `target.bssid`. It then passes `&target` to `ieee80211_iter_keys()`. The callback `iter` is not defined in this file, so I'm going on how the upstream driver works: it copies the matching key's cipher and key into the `target.cipher` and `target.tk` pointers. Here those pointers hold leftover stack data, so the callback can write through bad pointers and corrupt kernel memory. The caller's `cipher` and `tk` buffers also never get filled, so stale key data can be sent to the firmware.
+
+**Fix:** set every field before the call, for example `struct iwl_mvm_ftm_iter_data target = { .cipher = cipher, .bssid = bssid, .tk = tk };`.
+
+Line 7 has `// #ifdef CONFIG_IWLWIFI_DEBUGFS` commented out, while the matching `#endif` on line 12 is still active, so the file won't compile as written. That looks like an editing mistake in the sample rather than the vulnerability, so I didn't include it in the answer.
+✔ Report written to results/s138.json

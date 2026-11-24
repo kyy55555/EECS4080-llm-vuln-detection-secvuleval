@@ -1,0 +1,12 @@
+▶ Scanning: samples/s171.c
+▶ Report:   results/s171.json
+My verdict is that `fsnotify_recalc_mask` in `samples/s171.c` is **not vulnerable**, and I've written that to `results/s171.json`. I based this only on the 12-line function itself, so my assumptions about how it is called can't be checked from this file.
+
+- **Null check:** the function returns early if `conn` is NULL.
+- **Locking:** the mask is recalculated while `conn->lock` is held.
+- **Code after the unlock:** `conn->type` is read and `__fsnotify_update_child_dentry_flags(fsnotify_conn_inode(conn))` is called after the lock is released. This would only be a use-after-free or NULL dereference if the connector could be detached at that moment. That rests on an assumption the file can't show: callers keep a mark attached to the connector while holding the group's `mark_mutex`. If so, the connector and its inode can't be detached or freed during this call.
+
+The JSON also gives an optional hardening step. It doesn't fix a vulnerability:
+- Save the inode pointer while still holding the lock.
+- Use `READ_ONCE`/`WRITE_ONCE` on the mask fields. This stops the race-detection tool KCSAN from flagging the unsynchronised reads, which don't affect memory safety.
+✔ Report written to results/s171.json

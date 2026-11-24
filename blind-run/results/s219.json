@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "free_device_compression_mode(iaa_device, device_mode);",
+      "reason": "This releases device_mode (its DMA buffers and the struct itself via kfree) before the mode-specific free callback runs, so device_mode is a dangling pointer from here on."
+    },
+    {
+      "statement": "iaa_compression_modes[i]->free(device_mode);",
+      "reason": "The per-mode free callback receives device_mode after free_device_compression_mode() has already freed it, so the callback reads freed memory (use-after-free)."
+    }
+  ],
+  "suggested_fix": "Call the mode-specific free callback (iaa_compression_modes[i]->free(device_mode)) before free_device_compression_mode(), so the callback runs while device_mode is still valid. Then free the device mode and set iaa_device->compression_modes[i] to NULL."
+}

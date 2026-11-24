@@ -1,0 +1,12 @@
+▶ Scanning: samples/s191.c
+▶ Report:   results/s191.json
+I've marked `samples/s191.c` as vulnerable to a memory leak (CWE-401) and written the result to `results/s191.json`.
+
+**The leak:** The KUnit test function `vcap_api_encode_rule_test()` allocates a rule with `vcap_alloc_rule()` and then adds keys and actions to it, which allocates more memory. From how the test uses these calls, `vcap_add_rule()` appears to store its own copy of the rule, and `vcap_del_rule()` frees only that stored copy. The test never calls `vcap_free_rule(rule)`, so the original rule and its key and action lists leak every time the test runs. I'm inferring how `vcap_add_rule()` and `vcap_del_rule()` behave, because their code isn't in this file.
+
+**Suggested fix:** Call `vcap_free_rule(rule)` after `vcap_del_rule()`.
+
+**Secondary issue:** The fix text also suggests replacing `KUNIT_EXPECT_PTR_NE` with `KUNIT_ASSERT_PTR_NE` on the allocation check. `EXPECT` only records a failure and keeps going, so if the allocation failed, the test would go on to use a NULL rule. I didn't list this as a separate vulnerable statement.
+
+This is test code, so the security impact is small: it only runs when the KUnit tests are run.
+✔ Report written to results/s191.json

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-824",
+  "vulnerable_statements": [
+    {
+      "statement": "struct iwl_mvm_ftm_iter_data target;",
+      "reason": "The stack struct is declared but its 'tk' member is never set. Only 'bssid' and 'cipher' are filled in. The iterator callback uses target->tk as the destination for the key copy, so it writes through an uninitialized stack pointer. This is a wild kernel memory write, and the caller's tk buffer is never filled."
+    },
+    {
+      "statement": "ieee80211_iter_keys(mvm->hw, vif, iter, &target);",
+      "reason": "The iterator gets a partly initialized iter_data, so its key copy into target->tk dereferences garbage and can corrupt memory. The real 'tk' output buffer stays uninitialized, and that stale stack data is then sent to the firmware."
+    }
+  ],
+  "suggested_fix": "Set target.tk = tk (the output buffer) before calling ieee80211_iter_keys(), so that the iterator copies the matching TK into the caller's buffer. To be safer, zero-initialize the whole struct (struct iwl_mvm_ftm_iter_data target = {};). Also check that a key was actually found; if none was, clear tk or skip setting the SECURED flag."
+}

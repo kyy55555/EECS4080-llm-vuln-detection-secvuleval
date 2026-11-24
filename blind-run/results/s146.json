@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "if (copy_size && (user_offset > object_offset ||",
+      "reason": "Before copying user data up to the next object, the code checks only that user_offset <= object_offset. It never checks that object_offset <= tr->data_size. object_offset comes from the offsets array, which userspace controls. A large offset therefore makes binder_alloc_copy_user_to_buffer() copy past the data area and into the offsets area of the target buffer, which has already been copied in and is being read by this loop. Userspace can then rewrite offsets after their objects were translated, so the offsets that were validated are not the ones in the buffer. When binder_transaction_buffer_release() later cleans up using the tampered offsets, it can drop references on nodes or refs that were never taken (a refcount mismatch), which leads to a use-after-free of binder nodes and refs."
+    }
+  ],
+  "suggested_fix": "Reject the transaction when an object offset points past the data area before any copy happens. Add an 'object_offset > tr->data_size' check to the condition: if (copy_size && (user_offset > object_offset || object_offset > tr->data_size || binder_alloc_copy_user_to_buffer(...))). This keeps the partial user-data copies inside [0, data_size), so they can never overwrite the offsets array or the extra (scatter-gather) buffers."
+}

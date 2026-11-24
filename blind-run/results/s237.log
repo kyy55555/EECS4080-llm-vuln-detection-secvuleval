@@ -1,0 +1,11 @@
+▶ Scanning: samples/s237.c
+▶ Report:   results/s237.json
+I found no vulnerability in `samples/s237.c`, and I've written that verdict to `results/s237.json`.
+
+- **Stack array:** The loop at `samples/s237.c:33-35` writes `ns_addrs[idx]` first, then increments `idx` and stops once it reaches `IEEE80211_BSS_ARP_ADDR_LIST_LEN`. So it only ever writes slots that exist in the array.
+- **Socket buffer (skb) size:** The buffer is allocated with room for the header plus `idx` IPv6 addresses (`sizeof(req_hdr) + idx * sizeof(struct in6_addr)`), and exactly `idx` addresses are added afterwards. Nothing is written past the allocation.
+- **Uninitialized data:** Only the `idx` filled entries of `ns_addrs` are copied out, so no uninitialized stack data is sent.
+- **Locking:** The address list is read while holding `idev->lock`.
+
+This version looks like the fixed one. A version that wrote the address before checking the limit could overflow the array, but this code checks correctly.
+✔ Report written to results/s237.json

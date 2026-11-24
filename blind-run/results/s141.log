@@ -1,0 +1,11 @@
+▶ Scanning: samples/s141.c
+▶ Report:   results/s141.json
+I judged `snd_byt_cht_cx2072x_probe` in `samples/s141.c` **not vulnerable** and wrote that to `results/s141.json`, with `cwe` set to null and no vulnerable statements.
+
+What I checked:
+- **ACPI device reference (lines 23–29):** `acpi_dev_put(adev)` releases the device, and it safely does nothing when `adev` is NULL. So if no ACPI device matches, nothing reads through a NULL pointer. Code that calls `put_device(&adev->dev)` here would crash in that case, but this file doesn't.
+- **Codec name (line 25):** `snprintf` is limited to `sizeof(codec_name)`, so the name can't overflow the buffer.
+- **`dai_index` (lines 13–20):** it starts at 0 and only gets set to an index inside the array's bounds, so the write at line 27 stays within the array.
+
+Line 50 writes `snd_soc_pm_ops` into the shared driver structure (`pdev->dev.driver->pm`). That's poor design, but I didn't count it as a security flaw.
+✔ Report written to results/s141.json

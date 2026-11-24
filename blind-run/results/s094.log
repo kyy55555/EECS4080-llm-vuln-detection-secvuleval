@@ -1,0 +1,13 @@
+▶ Scanning: samples/s094.c
+▶ Report:   results/s094.json
+I wrote `results/s094.json` with the verdict **not vulnerable**. That's a fairly confident call, though not a certain one, because I could only see this one function.
+
+Why I think `snd_soc_dai_link_event` is safe:
+- **Input check:** it rejects the widget with `-EINVAL` unless the widget has both input and output connections, before it touches any of them.
+- **No dangling pointer:** in the power-down case it frees `substream->runtime` and immediately sets it to `NULL`, so nothing is left pointing at freed memory.
+- **State is restored:** it saves the substream's direction at the start and puts it back on every way out of the function, including the error path from `PRE_PMU`.
+
+Two things I couldn't check from this file:
+- **The helper:** `snd_soc_dai_link_event_pre_pmu` allocates the runtime. If it doesn't free that memory when it fails, there would be a leak, but that code isn't in this file.
+- **Endpoint types:** the function assumes every connected endpoint is a DAI widget whose `priv` is a valid `snd_soc_dai`. That depends on how the routes are set up elsewhere.
+✔ Report written to results/s094.json

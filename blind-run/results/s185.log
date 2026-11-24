@@ -1,0 +1,10 @@
+▶ Scanning: samples/s185.c
+▶ Report:   results/s185.json
+I marked the function as vulnerable and wrote the answer to `results/s185.json`, classified as CWE-129 (array index not properly validated).
+
+**The problem:** In the phantom-pipe loop, `phantom_stream_idx` comes from `resource_stream_to_stream_idx()`, and the code never checks it before using it as an index. If the paired phantom stream isn't found in `state->streams`, that index is -1, and line 30 reads `state->streams[-1]`, which is outside the array. That bad pointer is then passed to `resource_get_otg_master_for_stream()` and dereferenced.
+
+One assumption: the -1 "not found" return value comes from what that helper usually does in this driver. Its body isn't in this file, so I couldn't confirm it here.
+
+**Suggested fix:** Add `if (phantom_stream_idx < 0) continue;` before the array access. Optionally, also check that the index is below `state->stream_count` and that `paired_stream` isn't NULL.
+✔ Report written to results/s185.json

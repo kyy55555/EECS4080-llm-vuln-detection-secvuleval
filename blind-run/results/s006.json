@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "*func = function->data;",
+      "reason": "pinmux_generic_get_function() returns NULL when the function selector is not found in the radix tree (e.g. invalid or already-removed function). The return value is dereferenced without a NULL check, causing a kernel NULL pointer dereference."
+    }
+  ],
+  "suggested_fix": "Check the return value of pinmux_generic_get_function() before dereferencing it, e.g. 'if (!function) return -EINVAL;' right after the call, and only then read function->data. Checking pdesc for NULL after pin_desc_get() would also be a sensible defensive addition."
+}

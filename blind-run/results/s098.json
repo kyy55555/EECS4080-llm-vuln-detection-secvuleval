@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "cmd_db_header = memremap(rmem->base, rmem->size, MEMREMAP_WB);",
+      "reason": "The firmware-shared Command DB region is mapped write-back cacheable. This region is shared with remote processors and protected by the hypervisor/XPU, so cacheable mapping allows speculative accesses and cache maintenance against memory that must not be accessed that way, which can cause faults or stale/inconsistent data. The mapping is also never released: it is not device-managed and is not unmapped on the later error path."
+    },
+    {
+      "statement": "return -EINVAL;",
+      "reason": "When the magic check fails (line 21), the function returns without calling memunmap(cmd_db_header), so the mapping leaks. cmd_db_header also keeps pointing at the invalid mapping as a global."
+    }
+  ],
+  "suggested_fix": "Map the region with MEMREMAP_WC (non-cacheable, as other qcom shared-memory drivers do) instead of MEMREMAP_WB. Use devm_memremap() so the mapping is freed automatically if probe fails, or else call memunmap() and set cmd_db_header to NULL before returning on the magic-mismatch error path."
+}

@@ -1,0 +1,10 @@
+▶ Scanning: samples/s223.c
+▶ Report:   results/s223.json
+I marked `tc_irq_handler` in `samples/s223.c` as **not vulnerable** and wrote that to `results/s223.json`. It looks like an already-fixed version of the interrupt handler:
+
+- **Failed or empty status read:** if reading `INTSTS_G` fails or returns 0, the handler exits early.
+- **Uninitialized value:** `stat` is set to 0 before `regmap_read(SYSSTAT, ...)`. If that read fails, the error message logs 0 instead of uninitialized stack memory.
+- **NULL pointer:** before calling `drm_kms_helper_hotplug_event()`, the handler checks that `hpd_pin >= 0` and that `tc->bridge.dev` and `tc->aux.drm_dev` are set. So an interrupt that arrives before the bridge is attached can't trigger a NULL dereference.
+
+The one small gap is that the handler ignores whether the `SYSSTAT` read succeeded. That can only make the log message misleading, not unsafe, so I put it in `suggested_fix` as optional hardening rather than listing it as a vulnerability.
+✔ Report written to results/s223.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The ACPI device reference from acpi_dev_get_first_match_dev() is released with acpi_dev_put(), which is safe when adev is NULL, so there is no NULL dereference and no reference leak. The codec name is written with a bounded snprintf(), and dai_index always stays inside the dailink array."
+}

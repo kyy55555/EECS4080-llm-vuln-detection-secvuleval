@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix is required. The request is allocated and sized by smb2_plain_req_init, the RDMA descriptor is written into the reserved Buffer area with total_len adjusted accordingly, a failed MR registration is handled by returning -EAGAIN, and NULL rdata is guarded everywhere it is dereferenced. As a robustness improvement, the server NULL check could be moved before smb2_plain_req_init, and the request buffer could be released on the -EAGAIN error path."
+}

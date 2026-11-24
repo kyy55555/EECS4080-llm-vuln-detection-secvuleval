@@ -1,0 +1,9 @@
+▶ Scanning: samples/s176.c
+▶ Report:   results/s176.json
+I wrote the verdict to `results/s176.json`: **vulnerable, CWE-476 (NULL pointer dereference)**. This is a judgement from reading the code; nothing was compiled or run.
+
+- **The flagged line:** `kfree_skb(nxpdev->rx_skb);` at `samples/s176.c:11`.
+- **Why it's a problem:** the flush function frees whatever is stored in `rx_skb`. That field doesn't always hold a valid buffer. It can hold an error-pointer value, and `kfree_skb()` only checks for NULL, so freeing it touches an invalid address and crashes the kernel. That can happen when the driver is removed after a firmware download fails or is cut short.
+- **Caveat:** the file only contains `btnxpuart_flush`. The claim that `rx_skb` can hold an error pointer comes from what I know of how this driver's receive path works, not from anything I could see. Inside this file alone, the free is unconditional.
+- **Suggested fix:** wrap the free in `if (!IS_ERR_OR_NULL(nxpdev->rx_skb))`, then set `rx_skb` to NULL, and add the same check in the close path. It's also worth making sure the receive path can't touch `rx_skb` while the flush runs.
+✔ Report written to results/s176.json

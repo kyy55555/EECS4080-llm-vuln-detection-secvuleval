@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix is needed. This is a userspace kselftest for close_range(). All array accesses stay within open_fds[0..100]: the F_DUPFD_QUERY loop runs i < 100 and reads open_fds[i + 1], and the read after the loop on line 62 uses i == 100. One robustness change would help: the hard-coded close(57), close(78) and similar calls assume those fd numbers fall in the opened range. Using close(open_fds[k]) instead would make the test more reliable, but this is not a security issue."
+}

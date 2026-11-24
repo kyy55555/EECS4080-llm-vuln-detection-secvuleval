@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. The port index is bounds-checked against ARRAY_SIZE(altmode->ports) before use, duplicate ports are rejected, fwnode references are dropped on every early exit, and mux/retimer/switch references are released through devm actions. DRM bridges are allocated inside the loop but only added after all ports are set up, which avoids the earlier use-after-free in bridge registration. A minor cleanup would be to log the fwnode with %pfwP instead of %pOFn."
+}

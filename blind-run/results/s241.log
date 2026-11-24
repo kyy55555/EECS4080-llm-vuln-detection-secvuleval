@@ -1,0 +1,12 @@
+▶ Scanning: samples/s241.c
+▶ Report:   results/s241.json
+The function is vulnerable. It can divide by zero (CWE-369), and I wrote the answer to `results/s241.json`.
+
+**The bad line** (`samples/s241.c:22`):
+```c
+unsigned int frame_rate = timing->pix_clk_100hz / (timing->h_total * timing->v_total);
+```
+Nothing checks the divisor before the division. If a stream's timing has `h_total` or `v_total` set to 0, the kernel crashes. That could happen with timing that was never filled in or is invalid. The multiplication of the two values could also overflow and come out as 0. This code only runs when `dc->debug.static_screen_wait_frames` is set.
+
+**Suggested fix:** check that `h_total` and `v_total` are both non-zero before dividing, and skip the `frame_rate`/`num_frames` calculation if either is zero. Doing the multiplication and division in a 64-bit type (`div_u64`) also stops the product from overflowing.
+✔ Report written to results/s241.json

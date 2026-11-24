@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "if (test_bit(UB_STATE_OPEN, &ub->state) ||\n\t\t\tub->dev_info.state != UBLK_S_DEV_QUIESCED) {",
+      "reason": "The state check does not stop START_USER_RECOVERY from being issued twice. A successful first call does not change dev_info.state, which stays UBLK_S_DEV_QUIESCED, and no new daemon has opened the device yet. So a second call also passes this check and resets the queues again."
+    },
+    {
+      "statement": "ublk_queue_reinit(ub, ublk_get_queue(ub, i));",
+      "reason": "On the first call, ublk_queue_reinit drops the reference to ubq->ubq_daemon and sets it to NULL. On a repeated call it runs again on the NULL daemon (put_task_struct(NULL) and similar uses). This triggers a WARN and then a NULL pointer dereference in the kernel."
+    }
+  ],
+  "suggested_fix": "Only allow recovery when the queues still have their old daemons. One option is to require that every queue is in the 'ready' state (for example, nr_queues_ready equals nr_hw_queues, i.e. ublk_dev_ready(ub)) before reinitializing. Another is to move the device into a distinct 'recovering' state so that a second START_USER_RECOVERY returns -EBUSY. In addition, ublk_queue_reinit should check that ubq_daemon is non-NULL before calling put_task_struct."
+}

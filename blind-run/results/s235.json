@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "err = bpf_link_prime(&link->link, &link_primer);",
+      "reason": "By this point every uprobe has been registered, and each consumer points into the uprobes array and the link. If bpf_link_prime() fails (for example because no anon inode or fd is available), the code jumps to error_free without unregistering them, so the consumers stay attached to live uprobes."
+    },
+    {
+      "statement": "kvfree(uprobes);",
+      "reason": "When reached after a bpf_link_prime() failure, this frees memory that registered uprobe consumers still point to. The link is freed too and the task and path references are dropped. The next hit on a probed address calls handler/filter on freed memory, which is a use-after-free."
+    }
+  ],
+  "suggested_fix": "If bpf_link_prime() fails, unregister all registered uprobes before freeing memory. For example, add an error_unregister label that calls bpf_uprobe_unregister(uprobes, cnt) and then falls through to error_free. Use 'goto error_unregister' instead of 'goto error_free' after bpf_link_prime(). That way no uprobe consumer still points to the freed uprobes array or link."
+}

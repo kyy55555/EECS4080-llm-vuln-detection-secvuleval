@@ -1,0 +1,10 @@
+▶ Scanning: samples/s169.c
+▶ Report:   results/s169.json
+I found no vulnerability in `samples/s169.c` and wrote that result to `results/s169.json` (`"is_vulnerable": false`, CWE `null`, no vulnerable statements).
+
+The function is a userspace self-test for the `close_range()` system call, not kernel code. Every array access stays inside `open_fds[0..100]`:
+- **Line 24:** the loop stops at `i < 100`, so `open_fds[i + 1]` reaches index 100 at most, which is the last valid slot.
+- **Line 62:** `i` is 100 after the loop above it ends, so `open_fds[i]` is still in bounds.
+
+One thing I noted as a reliability issue only: lines 41–46 close hard-coded fd numbers (57, 78, 81, 82, 84, 90) and assume those numbers are among the ones the test opened. Writing `close(open_fds[k])` instead would be more reliable. The suggested-fix field in the JSON says this.
+✔ Report written to results/s169.json

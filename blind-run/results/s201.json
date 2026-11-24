@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The loop checks dai_link[i].num_codecs before dereferencing codecs->name, which avoids a NULL dereference on links that have no codec. The loop is bounded by ARRAY_SIZE of the DAI array that both card variants share. The devm allocation failure is handled. platform_data is set by the ACPI machine-matching code that creates this device. As extra hardening, the code could check mach for NULL and bound the loop by card->num_links."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The result of mt76_connac_get_he_phy_cap() is NULL-checked before any field of vc/ve is read. `ve = &vc->he_cap_elem` only computes an address and does not read memory. As a style hardening step, move that assignment after the `if (!vc) return;` check so the address is never formed from a NULL pointer. All capability values are masked by HE_PHY() and only used in min_t comparisons that are stored into bf fields, so no out-of-bounds access is possible."
+}

@@ -1,0 +1,13 @@
+▶ Scanning: samples/s187.c
+▶ Report:   results/s187.json
+I judged this function **not vulnerable** and wrote that to `results/s187.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+`samples/s187.c` is the Android Binder `binder_transaction()` function, and it already has the checks whose absence caused this function's past security bugs:
+
+- **Reply validation:** before replying, it confirms that the thread it is replying to really is waiting on this transaction (`target_thread->transaction_stack != in_reply_to`, line 92).
+- **Size checks:** the extra buffer size cannot overflow after the security-context size is added (lines 317–326). It also rejects offset and buffer sizes that aren't properly aligned (lines 389–405).
+- **Copy bounds:** data is copied from userspace only in the gaps between objects. Each gap is checked against `tr->data_size` and the previous object's end (lines 438–445). Objects must come in increasing order (`off_min`, line 455), and each pointer object's length must fit in the space left (lines 613–616).
+- **Cleanup on error:** when a transaction fails, it releases only the objects it has already processed. It passes `buffer_offset`, not `off_end_offset` (line 781), which is the fix for a known use-after-free.
+
+I worked only from this file, as instructed. Some of these checks depend on helpers defined elsewhere (`binder_get_object`, `binder_validate_ptr`, `binder_validate_fixup`), so I assumed those behave correctly.
+✔ Report written to results/s187.json

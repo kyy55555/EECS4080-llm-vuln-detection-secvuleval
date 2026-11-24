@@ -1,0 +1,10 @@
+▶ Scanning: samples/s083.c
+▶ Report:   results/s083.json
+I wrote the answer to `results/s083.json`: the function is **vulnerable** to a NULL pointer dereference (CWE-476).
+
+- **The problem:** In `amdgpu_device_recover_vram`, the "skip evicted BO" check at `samples/s083.c:22-24` reads `shadow->tbo.resource->mem_type`, `->start` and `shadow->parent->tbo.resource->mem_type` without first checking that the resource pointers exist. The kernel's buffer manager (TTM) can leave a buffer object with no resource attached, for example after eviction. If that happens to a shadow or its parent, VRAM recovery after a GPU reset dereferences NULL and crashes the kernel.
+- **The fix:** Add `!shadow->tbo.resource ||` and `!shadow->parent->tbo.resource ||` in front of the matching checks, so these objects are skipped with `continue` like other evicted objects.
+- **What I ruled out:** I also traced how the fence is handled through the early `break` paths and the final wait. Each fence reference is released exactly once, so there's no leak or use-after-free there.
+
+This conclusion comes only from reading the code. Whether the resource can actually be NULL at this point depends on TTM behaviour outside this file, which I couldn't check under the study's rules.
+✔ Report written to results/s083.json

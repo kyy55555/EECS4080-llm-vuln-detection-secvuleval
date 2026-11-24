@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The connector is NULL-checked, the mask is recalculated under conn->lock, and callers hold a mark attached to the connector (under the group's mark_mutex), so the connector and its inode cannot be detached or freed while the child dentry flags are updated after the lock is dropped. To be extra careful, the object pointer could be captured while conn->lock is held, and READ_ONCE/WRITE_ONCE could be used for the mask fields to silence data-race reports."
+}

@@ -1,0 +1,15 @@
+▶ Scanning: samples/s095.c
+▶ Report:   results/s095.json
+I wrote the answer to `results/s095.json`: the function is marked **vulnerable, CWE-416 (use-after-free)**.
+
+This verdict rests on an assumption I couldn't check. The file only contains `remove_anno_list_by_saddr`, not `mptcp_pm_del_add_timer()`. I assumed it releases `msk->pm.lock` before returning the entry and that the entry can still be reached by other code at the same time. That would match how the kernel's MPTCP path manager normally works, but if the helper actually unlinks the entry under the lock and stops its timer completely, these lines are safe.
+
+**Flagged statements:**
+- **`list_del(&entry->list);`** removes the announce entry from `anno_list` without holding the path-manager lock. Other code that walks or changes the list at the same time could race with it, causing list corruption or a double removal.
+- **`kfree(entry);`** frees the entry immediately. The add-address retransmit timer or another reader that already found the entry could still be using it, which is the use-after-free.
+
+**Suggested fix:**
+1. Remove the entry from the list inside `mptcp_pm_del_add_timer()` while the lock is still held.
+2. Make sure the timer has fully stopped before the memory is released.
+3. Free the entry with `kfree_rcu()` instead of `kfree()`, so readers never touch freed memory.
+✔ Report written to results/s095.json

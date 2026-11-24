@@ -1,0 +1,14 @@
+▶ Scanning: samples/s200.c
+▶ Report:   results/s200.json
+I judged `smb2_new_read_req` in `samples/s200.c` **not vulnerable** and saved that verdict to `results/s200.json`.
+
+Why I found no flaw:
+- **Request buffer:** `smb2_plain_req_init` allocates and sizes the request. The RDMA descriptor (`smbd_buffer_descriptor_v1`) goes into the reserved `Buffer` area, and `*total_len += sizeof(*v1) - 1` grows the length to match.
+- **Missing read context:** every use of `rdata` checks it for NULL first, both in the trace call and in the RDMA branch.
+- **RDMA registration:** if `smbd_register_mr` fails, the function returns `-EAGAIN` before it uses `rdata->mr`.
+- **Chained requests:** the alignment, `NextCommand` and related-request fields are set correctly.
+
+I added two robustness notes to the `suggested_fix` field, though neither looks like a security bug:
+- `server` is checked for NULL only after it has already been passed to `smb2_plain_req_init`.
+- On the `-EAGAIN` path, the function returns without freeing the request buffer.
+✔ Report written to results/s200.json

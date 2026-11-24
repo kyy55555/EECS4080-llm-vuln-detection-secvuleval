@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The loop is capped by num_ranges < VBIOS_MAX_AC_TIMING_ENTRIES, so writes to mc_reg_table_entry[num_ranges] stay in bounds. The DATA_EQU_PREV branch checks 'if (i)' before reading mc_data[i-1], so index -1 is never used. For extra hardening, check that table->last is no larger than the size of the mc_data array, and check that reads through reg_data stay inside the VBIOS table."
+}

@@ -1,0 +1,23 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-787",
+  "vulnerable_statements": [
+    {
+      "statement": "for (j = 0; j < mirror_top_info->num_nodes; j++) {",
+      "reason": "The loop bound num_nodes comes from the PSP firmware's topology response and is never checked against the fixed size of the nodes[] array (AMDGPU_XGMI_MAX_CONNECTED_NODES). If num_nodes is larger than that, j can index past the end of the array."
+    },
+    {
+      "statement": "if (mirror_top_info->nodes[j].node_id != src_node_id)",
+      "reason": "When j is past the end of nodes[], this reads memory outside the array."
+    },
+    {
+      "statement": "mirror_top_info->nodes[j].num_hops = dst_num_hops;",
+      "reason": "When j is past the end of nodes[], this writes outside the array and can corrupt nearby kernel memory in the psp/xgmi context."
+    },
+    {
+      "statement": "mirror_top_info->nodes[j].num_links = dst_num_links;",
+      "reason": "Same out-of-bounds write as num_hops, at the same unchecked index j."
+    }
+  ],
+  "suggested_fix": "Limit the loop index to the array size, e.g. `for (j = 0; j < min_t(int, mirror_top_info->num_nodes, AMDGPU_XGMI_MAX_CONNECTED_NODES); j++)`, or use ARRAY_SIZE(mirror_top_info->nodes). Better still, check num_nodes when the topology info is first received from the PSP, and reject or clamp any value larger than the nodes[] array so no consumer can index past it."
+}

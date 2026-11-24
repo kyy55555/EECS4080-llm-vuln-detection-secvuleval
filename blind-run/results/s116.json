@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "return -EAGAIN;",
+      "reason": "The request buffer 'req' was allocated by smb2_plain_req_init(). If smbd_register_mr() fails, the function returns -EAGAIN without freeing 'req' and without storing it in *buf, so the caller cannot release it either. Each failed RDMA memory registration leaks a request buffer. A peer or network condition that keeps causing registration failures and retries can exhaust kernel memory."
+    }
+  ],
+  "suggested_fix": "On the smbd_register_mr() failure path, free the request buffer before returning, for example with cifs_small_buf_release(req); return -EAGAIN;. Another option is to send all error exits through a common cleanup label that releases req."
+}

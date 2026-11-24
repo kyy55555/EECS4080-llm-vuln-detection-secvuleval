@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The port index is bounds-checked with '>=' against ARRAY_SIZE(altmode->ports), every early return inside device_for_each_child_node() drops the fwnode reference, mux/retimer/switch handles are released via devm actions, the DRM HPD bridges are allocated first and only added after all ports are set up, and the pmic_glink client is allocated before it is registered, so callbacks cannot arrive before the work items, completion, mutex and bridges are initialized."
+}

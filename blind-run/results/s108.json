@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-755",
+  "vulnerable_statements": [
+    {
+      "statement": "ret = ice_realloc_rx_xdp_bufs(rx_ring, pool_present);",
+      "reason": "If this or ice_qp_dis() fails, the code jumps to xsk_pool_if_up without setting pool_failure. The pool is never enabled or disabled, but the ring is left in an inconsistent state (Rx buffers may be partly reallocated for a different memory model)."
+    },
+    {
+      "statement": "ret = ice_qp_ena(vsi, qid);",
+      "reason": "This overwrites the error code from ice_qp_dis()/ice_realloc_rx_xdp_bufs(). If re-enabling succeeds, the function returns 0 even though setup of the XSK pool failed. The caller (AF_XDP core) then thinks the pool is attached or detached when it is not, which can lead to use of a stale or freed pool / UMEM memory. Re-enabling a queue pair that failed to disable can also run on a half-torn-down ring."
+    },
+    {
+      "statement": "napi_schedule(&vsi->rx_rings[qid]->xdp_ring->q_vector->napi);",
+      "reason": "This runs when pool_present and ice_qp_ena succeeded, even if the earlier steps or ice_xsk_pool_enable failed. It kicks NAPI on a ring whose XSK state is inconsistent."
+    }
+  ],
+  "suggested_fix": "Keep the error from ice_qp_dis()/ice_realloc_rx_xdp_bufs() separate so a later successful ice_qp_ena() cannot overwrite it. Always return the first failure to the caller. If ice_qp_dis() fails, do not run the pool enable/disable and realloc path. Have ice_qp_dis()/ice_qp_ena() go through their full teardown/bring-up sequence while tracking errors, instead of bailing out partway. Only call napi_schedule() when the whole setup succeeded."
+}

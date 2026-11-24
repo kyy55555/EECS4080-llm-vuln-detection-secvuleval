@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks that at least one of id_0/id_1/id_2 is non-NULL before dereferencing it (returning -EINVAL otherwise), sizes the buffer as prefix(2) + ':' + 2*len hex digits + NUL to match exactly what bin2hex writes, checks kmalloc for failure, frees the request string on every path, and drops the key reference with key_put() when the secondary ID check rejects the key."
+}

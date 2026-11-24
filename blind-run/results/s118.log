@@ -1,0 +1,8 @@
+▶ Scanning: samples/s118.c
+▶ Report:   results/s118.json
+I wrote the answer to `results/s118.json`. I marked the function as **vulnerable** with **CWE-416 (use-after-free)**. This comes from reading the sample file alone; I didn't check it against other kernel code or test it.
+
+**The problem:** at `samples/s118.c:7-8`, `dma_fence_init` gives the fence a lock that belongs to the exec queue (`&q->lr.lock`). The fence can outlive the queue. The function does take a reference on the queue (`xe_exec_queue_get`), but the driver normally drops it once the fence signals, and that release code isn't in this file. After that, the queue can be freed while other holders of the fence still lock and unlock `fence->lock`. That lock now points into freed memory.
+
+**Suggested fix:** give `struct xe_preempt_fence` its own spinlock and pass that to `dma_fence_init`. Alternatively, keep the queue reference until the fence itself is released, for example by dropping it in the fence's release callback.
+✔ Report written to results/s118.json

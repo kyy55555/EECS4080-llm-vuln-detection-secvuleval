@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "return -EINVAL;",
+      "reason": "When btf_type_by_id() fails for relo->type_id, the function returns directly without freeing the 'specs' buffer (~4KB) allocated with kcalloc() just above. A user loading BPF programs with bad CO-RE relocation type IDs can repeatedly trigger this path and leak kernel memory."
+    }
+  ],
+  "suggested_fix": "Do not return directly on the bad type id path. Set err = -EINVAL and goto a cleanup label that does kfree(specs). Because the 'out' label also unlocks cand_cache_mutex when need_cands is set (and the mutex is not held yet at this point), either add a separate label that only frees specs, or call kfree(specs) before the return. Another option is to do the type lookup before allocating specs."
+}

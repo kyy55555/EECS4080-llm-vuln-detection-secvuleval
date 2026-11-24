@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The TX channel index is bounded by the number of configured TX channels (cpu % common->tx_ch_num), so the tx_chns array cannot be indexed out of bounds. Concurrent transmissions on the shared TX queue are serialized with __netif_tx_lock/__netif_tx_unlock. Frames that are not sent are left to the caller, which handles them through the returned nxmit count."
+}

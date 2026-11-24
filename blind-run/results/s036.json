@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function no longer sets SB_RDONLY directly outside the s_umount-protected remount path, which would otherwise confuse freeze_super() and cause deadlocks. It skips the read-only transition on shutdown, so thaw_super is not bypassed. It also avoids a forced panic during shutdown or system reboot. Updates are blocked through CP_ERROR_FLAG instead."
+}

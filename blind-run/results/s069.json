@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The handler checks the regmap_read result before using val, zero-initializes stat before the unchecked SYSSTAT read so no uninitialized stack data is logged, and checks both hpd_pin >= 0 and tc->bridge.dev before calling drm_kms_helper_hotplug_event, so an interrupt that arrives before the bridge is attached cannot dereference a NULL drm_device."
+}

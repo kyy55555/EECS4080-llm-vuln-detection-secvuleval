@@ -1,0 +1,8 @@
+▶ Scanning: samples/s092.c
+▶ Report:   results/s092.json
+I wrote the result to `results/s092.json`. My verdict is that `dmub_abm_set_pipe` is **not vulnerable**, though I'm not fully certain because the file shows only this function and not its callers.
+
+- **The command buffer is safe:** the command is a local union, and `memset` zeroes it before any field is set. That rules out leaking uninitialised stack data to the firmware.
+- **The writes are simple:** every field is a plain number assigned to a fixed-size struct. The size field (`payload_bytes`) is the struct's own size, so nothing is copied without a size limit and no length comes from the caller.
+- **Remaining risk:** the function reads `abm->ctx` without checking that `abm` is non-NULL. Whether that can crash depends on the callers, which aren't in this file. I also have a vague memory of an upstream Linux fix for possible NULL pointer dereferences here, but I couldn't confirm it under the file-only rule. If the expected answer is "vulnerable", the likely reasoning is a NULL pointer dereference (CWE-476) at `struct dc_context *dc = abm->ctx;`. The JSON mentions that check as defensive hardening, alongside range checks on the instance numbers passed to the firmware.
+✔ Report written to results/s092.json

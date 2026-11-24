@@ -1,0 +1,14 @@
+▶ Scanning: samples/s067.c
+▶ Report:   results/s067.json
+I found a use-after-free (CWE-416) in this function and wrote the result to `results/s067.json`.
+
+**The bug:** The function finds `entry` while holding `msk->pm.lock`, then releases the lock. After that it calls `sk_stop_timer_sync(sk, add_timer)` (`samples/s067.c:21`), and `add_timer` points inside `entry`.
+
+- When `check_id` is true, the entry is not removed from the list, so other threads can still find it.
+- In the gap after the lock is released, another thread can remove and free the entry. That could be another call to this function with `check_id == false`, or the code that frees the whole list.
+- The timer is then stopped on freed memory. The returned `entry` pointer can also be stale.
+
+The JSON flags two lines: the `sk_stop_timer_sync` call where the freed memory is used, and the `spin_unlock_bh` that opens the gap.
+
+**Suggested fix:** Take `rcu_read_lock()` before releasing the spinlock, stop the timer through `&entry->add_timer` inside that RCU section, then call `rcu_read_unlock()`. Every path that frees list entries should also switch from `kfree()` to `kfree_rcu()`, so an entry can't be freed while a timer stop is still running.
+✔ Report written to results/s067.json

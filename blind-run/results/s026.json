@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The ACPI device reference is released with acpi_dev_put() after its name is copied, the codec device reference is dropped with put_device() after gpiod_get(), the non-devm GPIO is released with gpiod_put() on every error path after it is acquired, codec_name is built with bounded snprintf/strscpy, and the map-name array indices come from FIELD_GET on single-bit masks, so they can only be 0 or 1."
+}

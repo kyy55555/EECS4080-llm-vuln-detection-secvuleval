@@ -1,0 +1,10 @@
+▶ Scanning: samples/s015.c
+▶ Report:   results/s015.json
+I've written the answer to `results/s015.json`. I marked `dcn10_set_drr` as **vulnerable**, with CWE-367 (a race between checking a value and using it) that can lead to a NULL pointer dereference.
+
+**The problem:** line 20 checks that `pipe_ctx[i]->stream_res.tg` is not NULL. But the code at lines 21–28 never keeps the pointer it checked. Each call reads the shared field again. If another thread sets that field to NULL in the meantime, a later read dereferences NULL. One example is `dc_state_destruct()` clearing the resource context. The gap is widest for the `set_static_screen_control` calls, which run after `set_drr`.
+
+**Suggested fix:** read `tg` into a local variable once, check that it and `tg->funcs` are not NULL, and then use only that local pointer for both calls.
+
+**How sure I am:** the NULL check on line 20 does handle a pointer that is simply missing. So the finding only holds if the field can change while this function is running. I based that on what I recall of a later upstream kernel fix for this exact race, not on anything in this file, which shows no locking either way. If your study's reference answer treats this NULL-checked code as the already-fixed version, it will mark it not vulnerable.
+✔ Report written to results/s015.json

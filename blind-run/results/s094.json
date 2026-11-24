@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks that the widget has both input and output edges before use, restores the saved substream direction on every exit path, and sets substream->runtime to NULL right after kfree() in POST_PMD, so no dangling pointer is left behind. Allocation and error cleanup for PRE_PMU happen in snd_soc_dai_link_event_pre_pmu, which should be checked separately for leaks on its error paths."
+}

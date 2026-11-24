@@ -1,0 +1,11 @@
+▶ Scanning: samples/s203.c
+▶ Report:   results/s203.json
+I judged this function **not vulnerable** and wrote that to `results/s203.json`, with `cwe` set to null and no vulnerable statements.
+
+The function `remove_device_compression_modes` (from the Intel IAA crypto driver) goes through each of the device's compression-mode slots:
+- **Empty slots:** it skips them, so nothing is used if it isn't there.
+- **Filled slots:** it runs the mode's own cleanup function if one exists, then frees the device's copy of the mode once.
+- **After freeing:** it sets the slot to NULL, so calling this function again can't free the same memory twice or use it after it's freed.
+
+One thing I couldn't check from this file alone: line 11 reads `iaa_compression_modes[i]->free` without first checking that `iaa_compression_modes[i]` exists. It's safe as long as the shared mode table entry is still there whenever a device holds that mode. The code that keeps those in step is in other files, so I assumed it rather than verified it. I mentioned adding a NULL check there as optional hardening in the `suggested_fix` field, not as a vulnerability.
+✔ Report written to results/s203.json

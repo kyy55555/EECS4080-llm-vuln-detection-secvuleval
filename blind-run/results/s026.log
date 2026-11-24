@@ -1,0 +1,12 @@
+▶ Scanning: samples/s026.c
+▶ Report:   results/s026.json
+I judged the function not vulnerable and wrote that to `results/s026.json` with `cwe` set to null and no vulnerable statements.
+
+What I checked:
+- **Reference counting:** the ACPI device is released with `acpi_dev_put()` right after its name is copied. The codec device is released with `put_device()` after the GPIO is obtained.
+- **GPIO cleanup:** the GPIO isn't managed by the driver framework, so it has to be released by hand. If it is acquired successfully, every later error path goes through `out_put_gpio`, which calls `gpiod_put()`.
+- **Buffer bounds:** `codec_name` is filled with `snprintf`/`strscpy`, and `byt_wm5102_components` with `snprintf`, all limited to the buffer size.
+- **Array indexing:** the three name tables each have two entries. Their indexes come from `FIELD_GET` on `quirk`. Even when a user overrides `quirk` through the `quirk_override` module parameter, the index can only be 0 or 1. That holds only if `BYT_WM5102_OUT_MAP` and `BYT_WM5102_IN_MAP` are single-bit masks. They aren't defined in this file, so I relied on the kernel's usual definitions. If either covered more than one bit, an override could read past the end of a table.
+
+One thing I noted but didn't count: `dev->driver->pm = &snd_soc_pm_ops` writes to the shared driver structure. That's a common pattern in these Intel board drivers and not a memory-safety problem.
+✔ Report written to results/s026.json

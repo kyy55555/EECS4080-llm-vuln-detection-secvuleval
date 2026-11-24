@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "return df_v1_7_channel_number[fb_channel_number];",
+      "reason": "fb_channel_number comes straight from a hardware register read (get_fb_channel_number) and is used as an index into the static df_v1_7_channel_number array without any bounds check. An unexpected or out-of-range register value (or a negative int) causes an out-of-bounds read."
+    }
+  ],
+  "suggested_fix": "Validate the index before using it: if fb_channel_number < 0 or fb_channel_number >= ARRAY_SIZE(df_v1_7_channel_number), fall back to a safe default (for example index 0) or return 0. Declaring fb_channel_number as unsigned also rules out negative values."
+}

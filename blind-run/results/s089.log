@@ -1,0 +1,10 @@
+▶ Scanning: samples/s089.c
+▶ Report:   results/s089.json
+I've written the verdict to `results/s089.json`: the function is vulnerable to a NULL pointer dereference (CWE-476).
+
+**The flaw:** at `samples/s089.c:52`, `acpi_dev_get_first_match_dev()` can return NULL when no matching ACPI device is present. The code checks for that only around the codec-name fixup. At line 59 it passes `adev` to `acpi_get_first_physical_node()` without checking it. That function dereferences `adev`, so a missing ACPI device would crash the kernel during probe.
+
+This rests on knowing how that kernel helper behaves. Its source isn't in this file, and I didn't read any other file or look anything up, as instructed.
+
+**Suggested fix:** if `adev` is NULL, fail probe with an error such as `-ENODEV` or `-EPROBE_DEFER`. Otherwise, call `acpi_get_first_physical_node()` and `acpi_dev_put()` only inside the `if (adev)` block.
+✔ Report written to results/s089.json

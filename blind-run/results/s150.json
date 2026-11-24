@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "btrfs_orig_bbio_end_io(remaining);",
+      "reason": "On the error path after a split, the remaining (original) bbio is ended first. If this drops its pending_ios count to zero, the original bbio is completed and freed. The split bbio still points to it through bbio->private."
+    },
+    {
+      "statement": "btrfs_orig_bbio_end_io(bbio);",
+      "reason": "Ending the split clone bbio follows bbio->private back to the already-completed and possibly freed remaining bbio. It writes that bbio's bi_status and decrements its pending_ios, which is a use-after-free and can also complete the bbio twice."
+    }
+  ],
+  "suggested_fix": "On the error path, end the split clone bbio before the remaining bbio, so the clone's completion passes the error to the original and drops its own reference while the original is still alive. Then end the remaining bbio as the final reference holder. Another option is to set the error status on the original and do a single ordered pending_ios decrement, so the original bbio is never touched after it may have been freed."
+}

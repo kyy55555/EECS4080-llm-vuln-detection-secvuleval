@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The handler rejects reads of the write-only SGI registers, decodes the register from Op1 for AArch32 and from Op2 for AArch64 to pick the SGI group, and passes the guest-written value to vgic_v3_dispatch_sgi. That function is responsible for validating the target affinity and SGI ID. Unexpected encodings fall back to Group 1, which is safe."
+}

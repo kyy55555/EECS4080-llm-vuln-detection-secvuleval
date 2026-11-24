@@ -1,0 +1,11 @@
+▶ Scanning: samples/s207.c
+▶ Report:   results/s207.json
+I judged `vmci_resource_remove` in `samples/s207.c` not vulnerable and wrote that to `results/s207.json` (`is_vulnerable: false`, no CWE, no vulnerable statements).
+
+Why:
+- **Correct match:** while holding the table lock, it looks for the entry by both its handle and its resource type. So it can't remove a different resource that happens to share the same handle.
+- **Safe for lock-free readers:** it unlinks the entry with `hlist_del_init_rcu`, releases the lock, then calls `synchronize_rcu()`. Any code still reading the table without the lock finishes before the reference is dropped.
+- **No early free:** it drops its own reference with `vmci_resource_put()`, then waits on `resource->done`. The caller can't free the object until every other holder has released it.
+
+As far as I can tell this is the fixed form of the code. If an earlier version matched only on the handle, that one could remove the wrong resource; this one checks the type as well. I checked only this one file, as instructed, so I couldn't confirm how the helpers it calls behave.
+✔ Report written to results/s207.json

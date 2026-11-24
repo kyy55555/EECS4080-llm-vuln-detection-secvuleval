@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function already avoids setting SB_RDONLY on shutdown, which would otherwise bypass thaw_super and could hang the system. It skips the forced panic when the system is going down or the filesystem is already shut down. It also orders the s_mount_flags updates before the s_flags update with smp_wmb()."
+}

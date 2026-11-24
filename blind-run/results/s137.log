@@ -1,0 +1,10 @@
+▶ Scanning: samples/s137.c
+▶ Report:   results/s137.json
+I marked `samples/s137.c` as vulnerable (CWE-415, double free / use-after-free) and wrote the answer to `results/s137.json`.
+
+**The bug:** in the `SND_SOC_DAPM_POST_PMD` case, `kfree(substream->runtime);` frees the runtime but leaves `substream->runtime` pointing at the freed memory. The substream lives on in `w->priv` after power-down, so the next power cycle, an error path, or a repeated power-down can read or free that stale pointer again.
+
+I'm fairly confident but can't be sure. The case for a double free relies on what happens outside this function, which I couldn't check because I was limited to this one file. That includes what `snd_soc_dai_link_event_pre_pmu` does and whether this event can fire twice without a new allocation in between. My judgment also draws partly on memory that the current kernel source clears the pointer at this spot; I didn't check that against the source.
+
+**Suggested fix:** set `substream->runtime = NULL;` right after the `kfree`. The `PRE_PMU` error path should also free and clear the runtime the same way.
+✔ Report written to results/s137.json

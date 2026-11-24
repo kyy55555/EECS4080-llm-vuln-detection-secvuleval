@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "sk_stop_timer_sync(sk, add_timer);",
+      "reason": "add_timer points into 'entry', which was found under msk->pm.lock. The lock is released before this call. When check_id is true, the entry stays on the anno list, so another thread (for example a concurrent mptcp_pm_del_add_timer with check_id == false, or the anno-list free path) can unlink and kfree the entry in that window. The timer is then stopped on freed memory, a use-after-free in __timer_delete_sync."
+    },
+    {
+      "statement": "spin_unlock_bh(&msk->pm.lock);",
+      "reason": "The lock is dropped while the code still holds a pointer to 'entry'. Nothing else keeps the entry alive (no RCU read section and no reference), so it can be freed while it is still being used and after it is returned."
+    }
+  ],
+  "suggested_fix": "Keep the entry alive between dropping pm.lock and stopping the timer. For example, take rcu_read_lock() before releasing the spinlock, call sk_stop_timer_sync(sk, &entry->add_timer) inside the RCU read section, then call rcu_read_unlock(). Also change every path that frees anno-list entries to use kfree_rcu() instead of kfree(), so a concurrent remover cannot free the entry while a timer stop is in progress."
+}

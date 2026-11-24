@@ -1,0 +1,10 @@
+▶ Scanning: samples/s219.c
+▶ Report:   results/s219.json
+The function is vulnerable: it's a use-after-free (CWE-416). I wrote the answer to `results/s219.json`.
+
+**The bug:** inside the loop in `samples/s219.c`, the code calls `free_device_compression_mode(iaa_device, device_mode)` on line 11 and then passes the same `device_mode` to the mode's own cleanup function, `iaa_compression_modes[i]->free(device_mode)`, on line 14. Once the first call has freed the object, the second call is handed a pointer to freed memory.
+
+**One assumption:** the definition of `free_device_compression_mode()` isn't in this file. The finding relies on it freeing `device_mode` itself, which its name and the way it's called suggest.
+
+**Fix:** call `iaa_compression_modes[i]->free(device_mode)` first, while the object is still valid. Then call `free_device_compression_mode()` and set `iaa_device->compression_modes[i]` to `NULL`.
+✔ Report written to results/s219.json

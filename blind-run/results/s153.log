@@ -1,0 +1,17 @@
+▶ Scanning: samples/s153.c
+▶ Report:   results/s153.json
+I marked `samples/s153.c` as vulnerable, with a race condition (CWE-362) in `__genradix_ptr_alloc()`, and wrote the answer to `results/s153.json`.
+
+**The bug:** When the tree needs to get deeper, the function allocates a new node and points its first child slot (`new_node->children[0]`) at the current root. It then tries to install that node as the new root with `cmpxchg_release`.
+
+If another thread made the tree deeper first, that swap fails. The loop then sees the tree is already deep enough and exits, but it keeps the spare node without clearing that child slot.
+
+The second loop can then put that spare node into the tree with `cmpxchg_release(p, NULL, new_node)`, as an inner node or a leaf. That node still points at the old root, so the tree can end up with shared subtrees or cycles, or a caller can get back a leaf that isn't zeroed.
+
+**Statements listed in the JSON:**
+- The line that sets the child pointer: `new_node->children[0] = n;`
+- The root `cmpxchg_release` line, which has no cleanup when the swap fails.
+- The later `cmpxchg_release(p, NULL, new_node)`, which inserts the reused node.
+
+**Suggested fix:** When the root swap fails, set `new_node->children[0]` back to `NULL`, or free the spare node instead of keeping it.
+✔ Report written to results/s153.json

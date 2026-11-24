@@ -1,0 +1,13 @@
+▶ Scanning: samples/s058.c
+▶ Report:   results/s058.json
+I judged this function **not vulnerable** and wrote the result to `results/s058.json`.
+
+What the function does:
+- **System framebuffer:** it calls `sysfb_disable(&pdev->dev)` with the device being probed. I'm assuming `sysfb_disable()` uses that device to remove the firmware framebuffer only when it belongs to this device; its body isn't in the file, so I couldn't check this.
+- **Memory regions:** for each of the device's memory regions (`IORESOURCE_MEM` BARs), it removes other drivers using that region. The addresses come from the PCI core's table for the device, not from user input.
+- **Legacy VGA:** it removes legacy VGA devices only when `pdev` is the system's default VGA device.
+
+That makes this look like the already-fixed version of a known bug. In older versions, `sysfb_disable()` was called without a device, so probing a second GPU could tear down the main display's framebuffer. That was mainly a reliability problem, and this version doesn't have it.
+
+The JSON has `is_vulnerable: false`, `cwe: null`, an empty list of vulnerable statements, and a note that no fix is needed.
+✔ Report written to results/s058.json

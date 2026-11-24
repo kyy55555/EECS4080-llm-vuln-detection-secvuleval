@@ -1,0 +1,12 @@
+▶ Scanning: samples/s230.c
+▶ Report:   results/s230.json
+I judged `ice_vsi_rebuild` in `samples/s230.c` **not vulnerable** and wrote that to `results/s230.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+This sample looks like the fixed version of code that had real bugs in earlier versions of this function. I'm recognising those from memory, not from anything in the file, which is all I read.
+
+- **VF check (line 13):** `WARN_ON` covers the whole condition (`type == ICE_VSI_VF && !vsi->vf`). So a VF-type VSI with no VF attached is rejected before anything uses `vsi->vf`.
+- **Order of steps (lines 16–21):** `ice_vsi_realloc_stat_arrays()` is called before `ice_vsi_decfg()` / `ice_vsi_cfg_def()`. The stat arrays are resized while the old queue counts are still valid, so there's no out-of-bounds or use-after-free on the statistics.
+- **`coalesce` buffer:** It's freed on every path after it's allocated, and none of those paths uses it after freeing it.
+
+In the JSON's `suggested_fix` field I added one optional cleanup, not a security fix: when `kcalloc` fails (line 28), the function returns `-ENOMEM` directly instead of going through a cleanup label like the other error paths. That leaves the VSI configured, but nothing an attacker could use.
+✔ Report written to results/s230.json

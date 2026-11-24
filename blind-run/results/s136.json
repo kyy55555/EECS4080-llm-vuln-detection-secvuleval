@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "if (req_op_level == SMB2_OPLOCK_LEVEL_LEASE) {",
+      "reason": "req_op_level is the client-supplied RequestedOplockLevel. lc comes from parse_lease_state(req), which returns NULL when the request has no (valid) lease create context. A client can request SMB2_OPLOCK_LEVEL_LEASE without sending a lease context, so lc is NULL when this branch runs."
+    },
+    {
+      "statement": "lc->req_state &= ~SMB2_LEASE_WRITE_CACHING_LE;",
+      "reason": "This dereferences lc without a NULL check. Opening a directory with a lease oplock level and no lease context triggers a kernel NULL pointer dereference."
+    },
+    {
+      "statement": "req_op_level = smb2_map_lease_to_oplock(lc->req_state);",
+      "reason": "This dereferences lc unconditionally, so any remote, authenticated SMB2 CREATE that asks for a lease oplock without a lease context crashes the kernel (DoS). smb_send_parent_lease_break_noti(fp, lc) and find_same_lease_key(sess, fp->f_ci, lc) also receive the NULL lc."
+    }
+  ],
+  "suggested_fix": "Only enter the lease-handling branch when a lease context was actually parsed, e.g. change the condition to `if (req_op_level == SMB2_OPLOCK_LEVEL_LEASE && lc)`. Otherwise, either drop the requested level to a non-lease oplock (or none) or reject the request with STATUS_INVALID_PARAMETER. Also make sure every other use of lc (smb_send_parent_lease_break_noti, find_same_lease_key, smb_grant_oplock) handles a NULL lc."
+}

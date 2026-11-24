@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required for this function. It checks whether creating the workqueue succeeded and returns -ENOMEM if it failed, and it initializes the skb queue and the work item before anything can use them. Callers must still tear things down correctly by cancelling rx_work, destroying rxwq and purging rx_queue on deinit or on probe failure, but that happens outside this function."
+}

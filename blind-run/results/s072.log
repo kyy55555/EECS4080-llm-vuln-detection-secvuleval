@@ -1,0 +1,11 @@
+▶ Scanning: samples/s072.c
+▶ Report:   results/s072.json
+I've written `results/s072.json`. My verdict is **not vulnerable**.
+
+What I checked:
+- **Array index:** the ID returned by `fw_type_convert()` is checked against `AMDGPU_UCODE_ID_MAXIMUM` before it's used to index `adev->firmware.ucode[]` (`samples/s072.c:15`), so that read can't go out of bounds. This looks like the already-fixed version of a known out-of-bounds read in this function.
+- **Null pointer:** `ucode->fw` is checked for NULL before its data is used (`samples/s072.c:19`).
+- **String copies:** every firmware name copied into the 30-byte `fw_name` buffer is at most 27 characters, so the `strcpy` calls can't overflow. The longest are `amdgpu/polaris11_k2_smc.bin` and `amdgpu/polaris10_smc_sk.bin`.
+
+The suggested fix in the JSON lists two optional hardening steps: use `strscpy` instead of `strcpy`, and check the firmware header's size and offset fields against the firmware's actual size.
+✔ Report written to results/s072.json

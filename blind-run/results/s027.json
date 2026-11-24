@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "resource_log_pipe_for_stream(dc, state, otg_master, stream_idx);",
+      "reason": "In the phantom-pipe loop, otg_master returned by resource_get_otg_master_for_stream() can be NULL (no OTG master pipe found for the phantom stream), but unlike the first loop there is no NULL check before passing it to resource_log_pipe_for_stream(), which dereferences it, causing a NULL pointer dereference."
+    },
+    {
+      "statement": "otg_master = resource_get_otg_master_for_stream(\n\t\t\t\t\t&state->res_ctx, state->streams[phantom_stream_idx]);",
+      "reason": "resource_stream_to_stream_idx() may return -1 if the paired phantom stream is not found in the state; phantom_stream_idx is used unchecked to index state->streams, leading to an out-of-bounds read / invalid pointer use."
+    }
+  ],
+  "suggested_fix": "In the phantom loop, validate phantom_stream_idx (skip if negative or >= stream_count) before indexing state->streams, and add an `if (!otg_master) continue;` check after resource_get_otg_master_for_stream(), mirroring the first loop, before calling resource_log_pipe_for_stream()."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function takes pg->state_lock and checks that pg->ept is non-NULL before calling rpmsg_send(), returning -ECONNRESET otherwise. Because the remove/teardown path clears pg->ept under the same lock, the endpoint cannot be freed or set to NULL while it is being used, so there is no race or NULL-pointer dereference."
+}

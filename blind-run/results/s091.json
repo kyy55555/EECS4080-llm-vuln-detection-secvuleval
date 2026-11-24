@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "ptr = nilfs_btree_node_get_ptr(root, nchildren - 1,",
+      "reason": "The child count is read from on-disk metadata and only checked with 'nchildren > 1'. On a corrupted filesystem nchildren can be 0 or negative, so index nchildren - 1 is -1 (or lower). That reads outside the root node's pointer array, and the bad ptr is then passed to nilfs_btree_get_block."
+    },
+    {
+      "statement": "maxkey = nilfs_btree_node_get_key(node, nchildren - 1);",
+      "reason": "nchildren comes from the (possibly corrupted) node header and is never checked for being positive. If it is 0, the key is read at index -1, which is an out-of-bounds read before the key array."
+    }
+  ],
+  "suggested_fix": "Check the child count before using it as an index. In the height-3 case, return 0 (or -EINVAL) when nchildren <= 0, not just when nchildren > 1. After choosing the node, read nchildren and bail out (release bh and return 0) when it is <= 0 or larger than the node's capacity, before calling nilfs_btree_node_get_key with nchildren - 1."
+}

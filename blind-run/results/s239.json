@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The ACPI device reference is released with acpi_dev_put() after acpi_dev_name() is used, the codec device reference is dropped with put_device() after gpiod_get(), codec_name is bounded by snprintf/strscpy, and the non-devm GPIO is released via gpiod_put() on all error paths after it is acquired."
+}

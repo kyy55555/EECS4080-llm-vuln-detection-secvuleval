@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "platform_name = mach->mach_params.platform;",
+      "reason": "mach is taken from pdev->dev.platform_data and dereferenced without a NULL check. If the platform device is created/bound without ACPI machine platform data (e.g. manual bind or a different instantiation path), this dereferences a NULL pointer and crashes the kernel."
+    },
+    {
+      "statement": "ctx->common_hdmi_codec_drv = mach->mach_params.common_hdmi_codec_drv;",
+      "reason": "Same unchecked platform_data pointer is dereferenced again."
+    }
+  ],
+  "suggested_fix": "Check that pdev->dev.platform_data is non-NULL before using it (e.g. `mach = dev_get_platdata(&pdev->dev); if (!mach) return -EINVAL;`), and only then read mach->mach_params. Optionally also validate pdev->id_entry before using its driver_data."
+}

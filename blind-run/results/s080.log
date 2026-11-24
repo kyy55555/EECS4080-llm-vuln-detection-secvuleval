@@ -1,0 +1,12 @@
+▶ Scanning: samples/s080.c
+▶ Report:   results/s080.json
+I wrote `results/s080.json` and marked the function as **not vulnerable** (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+The usual weak spots in this kind of probe function are all handled correctly:
+- **Bounds check:** the `port` value read from the device tree's `reg` property is checked with `port >= PMIC_GLINK_MAX_PORTS` before it's used to index `port_orientation[]`. That rules out an out-of-bounds write.
+- **Reference handling:** both early-return paths inside `device_for_each_child_node` call `fwnode_handle_put(fwnode)`, so no node reference leaks.
+- **Teardown order:** `pmic_glink_ucsi_destroy` is registered with `devm_add_action_or_reset` before the pmic_glink client is registered. Because devm cleanup runs in reverse order, the UCSI instance is destroyed only after the client is unregistered, which avoids a use-after-free during teardown.
+- **Allocation errors:** the results of `devm_kzalloc`, `ucsi_create` and the GPIO lookup are all checked.
+
+One minor issue that isn't a security problem: the error message prints a `fwnode_handle` with `%pOFn`, which expects a device-tree node. `%pfwP` is the correct format, and I put that in the `suggested_fix` field as an optional cleanup.
+✔ Report written to results/s080.json

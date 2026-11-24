@@ -1,0 +1,13 @@
+▶ Scanning: samples/s103.c
+▶ Report:   results/s103.json
+The function is vulnerable: it can read memory before the start of a btree node's key array (CWE-125, out-of-bounds read). I wrote the answer to `results/s103.json`.
+
+**The bug:**
+- When the btree height is 3, the function loads a child block from disk and takes its child count from line 28, `nchildren = nilfs_btree_node_get_nchildren(node);`.
+- The check on line 11 that `nchildren` isn't 0 only covers the root node. The child's count is never checked.
+- On a corrupted or deliberately crafted nilfs2 image, the child's count can be 0. Line 34, `nilfs_btree_node_get_key(node, nchildren - 1)`, then reads at index -1, which is outside the node.
+
+**Suggested fix:** after reading the child's count, release the buffer and return if the count is 0 or less. Also check that it isn't larger than the node can hold.
+
+I worked from this file alone, as instructed, and didn't compare it with upstream kernel history.
+✔ Report written to results/s103.json

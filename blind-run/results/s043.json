@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The command union is zero-initialized with memset before use, so no uninitialized kernel stack data is sent to the DMUB firmware. The parameters are only copied into fixed-size scalar fields, and payload_bytes is set from sizeof() of the fixed payload struct. Nothing in the function uses an index or length that the caller controls. As defensive hardening, callers could check otg_inst and panel_inst against hardware limits, and the function could check abm/abm->ctx for NULL, but this file shows no exploitable flaw."
+}

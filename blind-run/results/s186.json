@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "spin_unlock_irqrestore(&irqfds_lock, flags);",
+      "reason": "After kirqfd is added to the global irqfds_list, the lock is released while kirqfd is still being used. A concurrent privcmd_irqfd_deassign() (or an EPOLLHUP-triggered shutdown) on the same eventfd can find it in the list, remove it, and free it in the meantime."
+    },
+    {
+      "statement": "events = vfs_poll(f.file, &kirqfd->pt);",
+      "reason": "kirqfd is used after it was published to irqfds_list without any protection. If another thread has already freed it, this is a use-after-free."
+    },
+    {
+      "statement": "irqfd_inject(kirqfd);",
+      "reason": "This can operate on a kirqfd that a racing deassign/shutdown has already freed (use-after-free)."
+    }
+  ],
+  "suggested_fix": "Keep kirqfd from being freed while assign still uses it after publishing it to irqfds_list. For example, take an SRCU read lock (srcu_read_lock(&irqfds_srcu)) before list_add_tail and hold it until after vfs_poll()/irqfd_inject(). In the shutdown/deassign path, call synchronize_srcu() before freeing kirqfd. Alternatively, finish all initialization and the initial poll before making the object visible to other threads."
+}

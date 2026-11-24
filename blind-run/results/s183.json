@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-415",
+  "vulnerable_statements": [
+    {
+      "statement": "kfree(dev->queues);",
+      "reason": "In the aac_comm_init() failure path, dev->queues is freed but the pointer is not set to NULL. The function returns NULL, and the caller's probe error path (aac_probe_one) frees aac->queues again, which causes a double free."
+    },
+    {
+      "statement": "kfree(dev->queues);",
+      "reason": "The aac_fib_setup() failure path has the same problem: dev->queues is freed and left dangling, so the caller's error cleanup frees it a second time (double free)."
+    }
+  ],
+  "suggested_fix": "Do not free dev->queues inside aac_init_adapter() on these error paths; let the caller's probe error path free it once. Alternatively, set dev->queues = NULL right after each kfree() so the later kfree() in the caller does nothing."
+}

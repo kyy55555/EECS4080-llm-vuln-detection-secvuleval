@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The function rejects non-PF VSIs, holds vsi->xdp_state_lock around both XDP program setup and XSK pool setup, so they cannot race with each other or with reset/rebuild paths that take the same lock, and it returns -EINVAL for unknown commands. The lock is released on every path."
+}

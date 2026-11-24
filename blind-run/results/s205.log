@@ -1,0 +1,10 @@
+▶ Scanning: samples/s205.c
+▶ Report:   results/s205.json
+I marked the function as vulnerable (CWE-476, NULL pointer dereference) and wrote the result to `results/s205.json`. This comes from reading the code only; I didn't run anything.
+
+**The bug:** at `samples/s205.c:22`, `queue->nr_cmds` is set before the commands are allocated. If `nvmet_tcp_alloc_cmds()` fails (line 23), the function returns `NVME_SC_INTERNAL` without setting `nr_cmds` back to 0. The queue is left with `nr_cmds > 0` but no command array (`cmds` is NULL).
+
+**Why it matters:** the teardown code is outside this file, so this part is an assumption. It probably loops over `nr_cmds` entries in `queue->cmds` (for example in `nvmet_tcp_free_cmds`). If so, it will dereference the NULL pointer and crash the kernel. A remote host could set this off by sending a Connect request with a queue size large enough to make the allocation fail.
+
+**Fix:** on the error path, set `queue->nr_cmds = 0` before returning. Setting `nr_cmds` only after the allocation succeeds also works.
+✔ Report written to results/s205.json

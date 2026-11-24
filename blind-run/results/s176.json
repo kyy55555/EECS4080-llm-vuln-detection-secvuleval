@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "kfree_skb(nxpdev->rx_skb);",
+      "reason": "nxpdev->rx_skb is set from the H4 receive helper (h4_recv_buf), which can return an ERR_PTR on a receive error, and it can still hold that value when firmware download fails or is interrupted. kfree_skb() only checks for NULL. If it gets an ERR_PTR, it dereferences an invalid pointer and the kernel crashes, for example when the device is flushed or the driver is removed after a failed firmware download."
+    }
+  ],
+  "suggested_fix": "Free rx_skb only when it holds a real skb: use 'if (!IS_ERR_OR_NULL(nxpdev->rx_skb)) kfree_skb(nxpdev->rx_skb);' and then set rx_skb to NULL. Add the same guard to the close path. Also make sure the receive path cannot use rx_skb at the same time, for example by holding a lock or stopping receive before the flush."
+}

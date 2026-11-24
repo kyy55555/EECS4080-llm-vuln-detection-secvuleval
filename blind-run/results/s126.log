@@ -1,0 +1,16 @@
+▶ Scanning: samples/s126.c
+▶ Report:   results/s126.json
+I judged this function **not vulnerable** and wrote the answer to `results/s126.json`.
+
+The two places where this kind of code usually goes wrong are both guarded:
+- **Number of entries:** the loop stops once `num_ranges` reaches `VBIOS_MAX_AC_TIMING_ENTRIES` (lines 13–14). So writing to `table->mc_reg_table_entry[num_ranges]` can't go past the end of the array.
+- **Copying the previous value:** the `DATA_EQU_PREV` branch checks `if (i)` (line 30) before reading `mc_data[i-1]`. That stops an out-of-bounds read at index -1 when the first register is marked "same as previous".
+
+From memory, both guards look like later fixes added to this kernel code, so this sample is probably the patched version.
+
+Two things can't be checked from this file alone. Both depend on how other code sets things up:
+- whether `table->last` is always within the size of the `mc_data` array;
+- whether reads through `reg_data` stay inside the VBIOS table.
+
+The suggested-fix field of the JSON lists these as optional hardening, not as vulnerabilities.
+✔ Report written to results/s126.json

@@ -1,0 +1,10 @@
+▶ Scanning: samples/s180.c
+▶ Report:   results/s180.json
+The function is vulnerable: it's a use-after-free (CWE-416). I've written the answer to `results/s180.json`.
+
+**The problem:** in `samples/s180.c:11`, `vmci_resource_remove()` searches the hash table for the resource to unlink by its handle alone. Two resources of different types can share the same handle, so the loop may find and unlink a different resource (`hlist_del_init_rcu(&r->node)` at line 12). The resource the caller asked to remove then stays in the hash table even though the caller frees it. Any later lookup or removal that walks that list touches freed memory.
+
+**Suggested fix:** only unlink the exact resource being removed. Either also require the types to match (`r->type == resource->type`) or compare the pointers directly (`r == resource`).
+
+I worked only from this file, as instructed. The finding also matches a known upstream kernel fix that I recall from memory, which added the type check to this comparison.
+✔ Report written to results/s180.json

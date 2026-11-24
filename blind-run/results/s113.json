@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "goto undo_softreset;",
+      "reason": "If st_dwc3_drd_init() fails after of_platform_populate() has already created and registered the child dwc3 core platform device(s), the error path only asserts the resets and returns. It never calls of_platform_depopulate(), so the child devices stay registered and leak. They keep running against hardware that is now held in reset, and the parent probe has failed."
+    },
+    {
+      "statement": "goto err_node_put;",
+      "reason": "When of_find_device_by_node() fails (line 75), the populated child devices are not depopulated before the function returns. That leaks the devices created by of_platform_populate()."
+    }
+  ],
+  "suggested_fix": "Add an error label such as 'depopulate:' that calls of_platform_depopulate(dev) and then falls through to the reset-assert cleanup. Jump to it from every failure that happens after of_platform_populate() succeeds: the of_find_device_by_node() failure (put the child node there too) and the st_dwc3_drd_init() failure. This tears down the child devices on every probe error path."
+}

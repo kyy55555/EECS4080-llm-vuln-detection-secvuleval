@@ -1,0 +1,12 @@
+▶ Scanning: samples/s048.c
+▶ Report:   results/s048.json
+I judged `scmi_optee_chan_free` in `samples/s048.c` **not vulnerable** and wrote that to `results/s048.json`, with `cwe` set to null and an empty `vulnerable_statements` list.
+
+The main risk in this function is freeing the same channel twice, because several protocols can share one channel info. The code already blocks that:
+
+- **Early return:** it exits straight away if `cinfo->transport_info` is NULL, so a second call on the same channel info does nothing.
+- **Locked list removal:** `list_del` runs while holding `scmi_optee_private->mu`.
+- **Pointers cleared after freeing:** `tee_shm` is set to NULL after `tee_shm_free()`, and both `cinfo->transport_info` and `channel->cinfo` are cleared. Nothing is left pointing at freed memory.
+
+This looks like the patched version of a double-free fix in the OP-TEE SCMI transport. That recognition comes from my memory of upstream Linux, not from this file, and I didn't check it, as you asked me to use only the sample.
+✔ Report written to results/s048.json

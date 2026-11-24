@@ -1,0 +1,10 @@
+▶ Scanning: samples/s038.c
+▶ Report:   results/s038.json
+I wrote the answer to `results/s038.json`: the function is **vulnerable**, a use-after-free (CWE-416).
+
+**The problem:** `cifs_get_writable_path()` takes one reference on `cfile`, and the first `smb2_compound_op()` call gives that reference back before it returns. If that call fails with `-EINVAL` (the "invalid lease key" case), the function retries at `samples/s038.c:25` with the same `cfile` pointer but never takes a new reference. The retry can therefore use `cfile` after it has been freed, and then gives the same reference back a second time.
+
+**Suggested fix:** inside the `-EINVAL` branch, call `cifs_get_writable_path()` again before retrying, so each call has its own reference. Passing `NULL` for `cfile` on the retry would also work.
+
+One caveat: the file doesn't show that `smb2_compound_op()` releases `cfile`. That part comes from what I know of the kernel's SMB client code, not from this sample.
+✔ Report written to results/s038.json

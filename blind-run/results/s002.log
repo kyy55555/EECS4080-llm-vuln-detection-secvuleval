@@ -1,0 +1,15 @@
+▶ Scanning: samples/s002.c
+▶ Report:   results/s002.json
+I saved the result to `results/s002.json`. I judged `smb2_sess_setup` vulnerable to a use-after-free (CWE-416), but I'm only moderately confident. I can't confirm the race from this one file, because the session lookup and lifetime code is in other files I didn't read.
+
+**The problem:** in the multichannel binding branch, `ksmbd_session_lookup_slowpath(sess_id)` (line 38) looks up a session that belongs to another connection, and the function never takes a reference on it. Only the current connection is locked (`ksmbd_conn_lock`). That means the connection that owns the session can log off and free it at the same time. Later uses of `sess` would then touch freed memory:
+- **Line 237:** the error path reads `sess->user->flags`, and `sess->user` may also have been freed.
+- **Line 241:** the error path writes `sess->state = SMB2_SESSION_EXPIRED`. Even without the race, a failed bind request marks another connection's valid session as expired.
+
+**Suggested fix:**
+- Give sessions a reference count: both lookup functions take a reference, and every exit path releases it.
+- In the binding branch's error paths, drop the reference and set `sess = NULL` before jumping to `out_err`.
+- Protect access to `sess->user` with a lock.
+
+**Other candidates I ruled out:** the security-buffer handling has its minimum checks in place. The buffer offset can't point before the start of `Buffer` (line 118), and the token must be at least as long as the header fields the code reads (line 133). The connection lock that guards against the setup/logoff race is also present.
+✔ Report written to results/s002.json

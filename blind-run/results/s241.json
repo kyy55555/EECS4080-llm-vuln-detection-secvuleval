@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-369",
+  "vulnerable_statements": [
+    {
+      "statement": "unsigned int frame_rate = timing->pix_clk_100hz / (timing->h_total * timing->v_total);",
+      "reason": "The divisor h_total * v_total is never checked before the division. If the stream timing has h_total or v_total set to 0 (for example, an uninitialized or bad timing), or if the product wraps to 0, the kernel divides by zero and crashes."
+    }
+  ],
+  "suggested_fix": "Check that timing->h_total and timing->v_total are both non-zero, and that their product does not wrap to zero, before doing the division. If either is zero, skip the frame_rate/num_frames calculation. Computing the product in a wider type, such as u64 with div_u64, also prevents the multiplication from overflowing."
+}

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-787",
+  "vulnerable_statements": [
+    {
+      "statement": "num_sched = &adev->gpu_sched[hw_ip][hw_prio].num_scheds;",
+      "reason": "hw_ip is taken from ring->funcs->type, which is an amdgpu_ring_type value. Some ring types (e.g. KIQ, MES, UMSCH) are numerically >= AMDGPU_HW_IP_NUM, the first dimension of gpu_sched. hw_prio is also never checked against AMDGPU_RING_PRIO_MAX. Either value can therefore index past the end of the gpu_sched array."
+    },
+    {
+      "statement": "adev->gpu_sched[hw_ip][hw_prio].sched[(*num_sched)++] =",
+      "reason": "This writes a scheduler pointer through the indices that were never validated. It also uses *num_sched as an index into sched[] without checking it against the array's capacity. The result is an out-of-bounds write into adev memory."
+    }
+  ],
+  "suggested_fix": "Register the ring with the scheduler only when the indices are valid, for example `if (!ring->no_scheduler && ring->funcs->type < AMDGPU_HW_IP_NUM)`. Also check that hw_prio < AMDGPU_RING_PRIO_MAX. Before incrementing *num_sched, check it against ARRAY_SIZE(adev->gpu_sched[hw_ip][hw_prio].sched) and return an error, or WARN, if the array is full."
+}

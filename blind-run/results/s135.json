@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "if (err != NET_XMIT_SUCCESS &&\n\t\t\t\t    net_xmit_drop_count(err)) {",
+      "reason": "When the child qdisc's enqueue returns __NET_XMIT_STOLEN (e.g. the packet was consumed or dropped by a classifier action), net_xmit_drop_count(err) is 0, so qdisc_tree_reduce_backlog() is skipped. The packet has already been removed from netem (sch->q.qlen--), but the ancestor qdiscs' qlen/backlog are never decremented. That leaves the parent's qlen inconsistent, for example a non-zero qlen on an empty class, so parent qdiscs such as HFSC or DRR keep a class active after it should be deactivated. When the class is later deleted, it can still be referenced from the parent's active list, which is a use-after-free."
+    },
+    {
+      "statement": "qdisc_tree_reduce_backlog(sch, 1,\n\t\t\t\t\t\t\t  pkt_len);",
+      "reason": "This call is reached only for drop-counted errors. It must run for every non-success return, including stolen packets, to keep the parent qdisc's accounting correct."
+    }
+  ],
+  "suggested_fix": "Always propagate the backlog reduction when the inner qdisc does not accept the packet: if (err != NET_XMIT_SUCCESS) { if (net_xmit_drop_count(err)) qdisc_qstats_drop(sch); qdisc_tree_reduce_backlog(sch, 1, pkt_len); }. This way stolen packets also update the ancestors' qlen and backlog. The drop statistic is still counted only for real drops."
+}

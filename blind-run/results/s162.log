@@ -1,0 +1,10 @@
+▶ Scanning: samples/s162.c
+▶ Report:   results/s162.json
+I wrote the answer to `results/s162.json`: the function is vulnerable to an **out-of-bounds read (CWE-125)**.
+
+**The vulnerable line:** `memcpy(&data, buf + i + j, 4);` in `samples/s162.c:38`.
+
+**Why it's a problem:** The first loop writes 8 bytes at a time. The second loop handles whatever is left over, but it rounds that leftover count up to a multiple of 4 and then always copies a full 4 bytes. If `op->data.nbytes - i` isn't a multiple of 4, the last copy reads up to 3 bytes past the end of the output buffer (`op->data.buf.out`).
+
+**Suggested fix:** Copy only the bytes that remain, using `min_t(int, 4, op->data.nbytes - i - j)` as the length. Also reset `data` to 0 before each copy, so the padding in the last word is zeros rather than leftover bytes from the previous word.
+✔ Report written to results/s162.json

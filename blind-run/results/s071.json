@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "codec_dev = acpi_get_first_physical_node(adev);",
+      "reason": "acpi_dev_get_first_match_dev() can return NULL (e.g. the codec ACPI device is absent/disabled or the HID matched by acpi_dev_found differs from the one present). The code only guards the name fixup with 'if (adev)' but then unconditionally passes adev to acpi_get_first_physical_node(), which dereferences adev (adev->physical_node_lock / physical_node_list), causing a NULL pointer dereference during probe."
+    }
+  ],
+  "suggested_fix": "Check the result of acpi_dev_get_first_match_dev() before using it: if adev is NULL, log an error and return -ENOENT (or -ENODEV) instead of continuing. Only call acpi_get_first_physical_node(adev) and acpi_dev_put(adev) when adev is non-NULL."
+}

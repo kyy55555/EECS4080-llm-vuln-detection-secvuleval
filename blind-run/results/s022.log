@@ -1,0 +1,10 @@
+▶ Scanning: samples/s022.c
+▶ Report:   results/s022.json
+I found no vulnerability in `samples/s022.c` and wrote that verdict to `results/s022.json`: `is_vulnerable` is false, `cwe` is null and the list of vulnerable statements is empty.
+
+The risky spot would have been a race on the timing-generator pointer, and the code already guards against it. At `samples/s022.c:24`, `dcn10_set_drr` reads `pipe_ctx[i]->stream_res.tg` once into a local `tg`. It then checks `tg` for NULL and uses it only through that local copy. So if another thread clears the field (through `dc_state_destruct()`) between the check and the use, it can't cause a NULL pointer dereference. The code comment also says the timing-generator object itself outlives this call.
+
+This looks like the patched form of a known check-then-use NULL dereference bug. The unfixed version re-read `pipe_ctx[i]->stream_res.tg` directly at each use. I'm basing that on how the code reads, since I worked only from this file.
+
+The function trusts the caller to pass a correct `num_pipes` for the `pipe_ctx` array. That's normal for internal kernel code, so I didn't count it as a vulnerability.
+✔ Report written to results/s022.json

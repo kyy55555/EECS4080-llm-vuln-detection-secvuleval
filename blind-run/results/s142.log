@@ -1,0 +1,12 @@
+▶ Scanning: samples/s142.c
+▶ Report:   results/s142.json
+I judged `act_establish` in `samples/s142.c` not vulnerable and wrote that verdict to `results/s142.json`, with no CWE and no vulnerable statements.
+
+What I checked in the function:
+- **NULL check:** the result of `lookup_atid()` is checked for NULL before `ep` is used (lines 11–13). This is the kind of missing check that has caused bugs in this handler before, so its presence suggests this is the patched version.
+- **Locking:** the endpoint's fields (`hwtid`, sequence numbers, window scale) and the tid insertion are all updated while `ep->com.mutex` is held.
+- **atid cleanup:** the atid is removed from the `atids` table before `cxgb4_free_atid()` releases it, so nothing can look up an atid that has already been freed.
+- **Error path:** the mutex is unlocked once, before `connect_reply_upcall()` and `c4iw_ep_disconnect()` run, so there's no double unlock or deadlock.
+
+I only had this one function. Whether it's safe also depends on code I couldn't see, such as how the endpoint's reference count is handled in `cxgb4_free_atid()` and `c4iw_ep_disconnect()`. Nothing in the function itself shows a flaw.
+✔ Report written to results/s142.json

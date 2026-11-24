@@ -1,0 +1,10 @@
+▶ Scanning: samples/s096.c
+▶ Report:   results/s096.json
+I judged the function vulnerable: it has a use-after-free (CWE-416) and I wrote the answer to `results/s096.json`. This comes from reading the code only; I didn't compile or run anything.
+
+**The bug:** inside the "split" branch, the function keeps a pointer to the old queue in `old_bfqq` and then calls `bfq_split_bfqq(bic, bfqq)` at `samples/s096.c:46`. That call gives up this request's reference to the old queue, and if it was the last one, the old queue is freed. At `samples/s096.c:59`, `bfqq->waker_bfqq = old_bfqq->waker_bfqq;` then reads from that freed queue. The result is passed to `hlist_add_head` at `samples/s096.c:70`, which links it into a list, so a stale pointer can corrupt kernel memory.
+
+**Suggested fix:** copy `old_bfqq->waker_bfqq` into a local variable before calling `bfq_split_bfqq()`, and don't touch `old_bfqq` after the split. Holding an extra reference on the old queue across the split and releasing it after copying would also work.
+
+The JSON also says the upstream kernel fix does this. That comes from my memory of the kernel history, not from this file, so it isn't checked here.
+✔ Report written to results/s096.json

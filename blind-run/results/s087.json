@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "return rpmsg_send(pg->ept, data, len);",
+      "reason": "pg->ept is used with no lock and no NULL check. When the rpmsg device is removed (or not probed yet), the remove path sets pg->ept to NULL. A client such as ucsi or battmgr can still call pmic_glink_send at that point, so a NULL or stale endpoint is passed to rpmsg_send and dereferenced. This is a NULL pointer dereference or use-after-free race."
+    }
+  ],
+  "suggested_fix": "Take the pmic_glink state mutex (pg->state_lock) around the send. While holding it, check whether pg->ept is NULL and return an error such as -ECONNRESET if it is; otherwise call rpmsg_send. The rpmsg probe and remove paths must assign and clear pg->ept under the same lock, so the endpoint cannot disappear while a send is in progress."
+}

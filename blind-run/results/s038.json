@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "rc = smb2_compound_op(xid, tcon, cifs_sb,\n\t\t\t\t      full_path, &oparms, &in_iov,\n\t\t\t\t      &(int){SMB2_OP_SET_EOF}, 1,\n\t\t\t\t      cfile, NULL, NULL, NULL);",
+      "reason": "cifs_get_writable_path() takes a single reference on cfile, and the first smb2_compound_op() call drops that reference (cifsFileInfo_put) before returning. On the -EINVAL lease-retry path, the same cfile pointer is passed again without taking a new reference. The retry can then use cfile after it has been freed, and it drops the reference a second time (double put). This is a use-after-free."
+    }
+  ],
+  "suggested_fix": "Before the retry, get a fresh reference on the writable file handle, for example by calling cifs_get_writable_path(tcon, full_path, FIND_WR_ANY, &cfile) again inside the -EINVAL branch, so that each smb2_compound_op() call uses and releases its own reference. Another option is to pass NULL for cfile on the retry."
+}

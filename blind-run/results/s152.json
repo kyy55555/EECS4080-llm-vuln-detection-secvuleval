@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The atid lookup result is NULL-checked before use, the negative-advice path returns early without releasing resources, the retry path releases the atid/dst/l2t before reconnecting and returns, and the failure path releases the CLIP entry, tid, atid, dst, and l2t exactly once before dropping the endpoint reference."
+}

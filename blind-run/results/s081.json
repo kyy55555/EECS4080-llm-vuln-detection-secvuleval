@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "sess = ksmbd_session_lookup_slowpath(sess_id);",
+      "reason": "In the multichannel binding path, the session is looked up from the global session table, which other connections can reach. No reference is taken on it. The only lock held is ksmbd_conn_lock(conn), and it covers just this connection. The session's owning connection can log off or tear it down at the same time and free it. This function then keeps reading and writing the freed object (sess->dialect, sess->ClientGUID, sess->state, sess->user, sess->Preauth_HashValue), which is a use-after-free."
+    },
+    {
+      "statement": "sess = ksmbd_session_lookup(conn,\n\t\t\t\t\t    le64_to_cpu(req->hdr.SessionId));",
+      "reason": "The session is returned without a reference count and stored in work->sess. It is used across long operations: generate_preauth_hash, krb5_authenticate or ntlm_authenticate, and a 5-second ssleep in the error path. During that time a concurrent logoff or session expiry (for example from a bound channel) can free it. The later accesses then touch freed memory."
+    },
+    {
+      "statement": "sess->state = SMB2_SESSION_EXPIRED;",
+      "reason": "In the error path, the possibly freed session is written to (sess->state, sess->last_active, sess->user->flags) with no reference held. The stale pointer also stays in work->sess, so later stages of the request can use the freed session again."
+    }
+  ],
+  "suggested_fix": "Add reference counting to sessions. Have ksmbd_session_lookup() and ksmbd_session_lookup_slowpath() take a reference (for example ksmbd_user_session_get()) while still holding the session-table lock. Then drop that reference with ksmbd_user_session_put() on every exit path: every error goto, the need_reconnect cases that set sess = NULL, and the out_err cleanup, where work->sess should also be cleared. On success, hand the reference to work->sess so it is released when the work item finishes. That way a concurrent logoff or teardown cannot free the session while smb2_sess_setup is still using it."
+}

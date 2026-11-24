@@ -1,0 +1,10 @@
+▶ Scanning: samples/s190.c
+▶ Report:   results/s190.json
+I've written the result to `results/s190.json`: the function is vulnerable to a **use-after-free (CWE-416)**.
+
+**The problem is the order of teardown.** When the network namespace shuts down, `ila_xlat_exit_net()` first frees the translation table and then the bucket spinlocks. Only after that does it unregister the netfilter hooks. Until that last step the hooks are still live, so a packet arriving in that window can run the hook. The hook then looks up the table or takes a lock that has already been freed.
+
+**Fix:** remove the hooks first, then wait an RCU grace period, then free the data. In practice, add a `pre_exit` handler that calls `nf_unregister_net_hooks()`. The kernel waits for an RCU grace period between `pre_exit` and `exit`, so no hook can still be running when `ila_xlat_exit_net()` frees the table and locks.
+
+I worked only from this file and didn't compile or run anything.
+✔ Report written to results/s190.json

@@ -1,0 +1,8 @@
+▶ Scanning: samples/s134.c
+▶ Report:   results/s134.json
+The function is vulnerable. It leaks a reference on a cache entry (CWE-911, improper update of reference count). I wrote the answer to `results/s134.json`.
+
+**The bug:** When `idmap_lookup()` succeeds, `item` holds a reference on the `idtoname` cache entry. If `xdr_reserve_space()` then fails, the function returns `nfserr_resource` at `samples/s134.c:22` without calling `cache_put()`, so the reference is never released. A client that keeps hitting this path, for example by making the reply buffer run out of space, can keep cache entries alive indefinitely and use up kernel memory.
+
+**Suggested fix:** Call `cache_put(&item->h, nn->idtoname_cache)` before returning `nfserr_resource`. Another option is to restructure the function so every exit after a successful lookup goes through one `cache_put()` call.
+✔ Report written to results/s134.json

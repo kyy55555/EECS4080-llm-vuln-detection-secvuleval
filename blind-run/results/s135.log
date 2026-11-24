@@ -1,0 +1,12 @@
+▶ Scanning: samples/s135.c
+▶ Report:   results/s135.json
+I've written the result to `results/s135.json`: the function is vulnerable, a use-after-free (CWE-416). This came from reading the code only; I didn't build or run anything.
+
+**The bug:** `netem_dequeue` takes a packet off its own queue (`sch->q.qlen--`) and hands it to the inner qdisc with `qdisc_enqueue`. If that call returns `__NET_XMIT_STOLEN`, `net_xmit_drop_count(err)` is 0. The condition at `samples/s135.c:50-51` is then false, so `qdisc_tree_reduce_backlog()` is never called.
+
+**Why it matters:** the parent qdiscs never learn that the packet is gone, so their packet count (`qlen`) and byte backlog stay too high. A parent like HFSC or DRR can then keep an empty class on its active list. If that class is deleted, the parent still points to freed memory, which is the use-after-free.
+
+**The fix:** call `qdisc_tree_reduce_backlog(sch, 1, pkt_len)` whenever `err != NET_XMIT_SUCCESS`. Only `qdisc_qstats_drop(sch)` should stay behind the `net_xmit_drop_count(err)` check, so stolen packets still update the parents without counting as drops.
+
+The two flagged statements each span two lines in the source, so the `statement` fields contain the line breaks rather than a single line.
+✔ Report written to results/s135.json

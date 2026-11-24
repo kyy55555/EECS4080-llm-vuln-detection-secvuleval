@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "pm8001_ha->phy[phy_id].enable_completion = &completion;",
+      "reason": "A pointer to an on-stack completion is stored in the long-lived per-phy structure on every call, including paths that never wait for it (fatal-error early return, RELEASE_SPINUP_HOLD, DISABLE, GET_EVENTS, default, and the cases where phy_state is not PHY_LINK_DISABLE). After the function returns, enable_completion is left pointing at a dead stack frame. A later PHY start response or event in the interrupt/event handler calls complete() on that stale pointer, which corrupts the stack (a use-after-free / use of an out-of-scope stack object)."
+    },
+    {
+      "statement": "return -EFAULT;",
+      "reason": "This early return happens after enable_completion has been set to the stack-allocated completion and does not clear it, so the dangling pointer stays in pm8001_ha->phy[phy_id]."
+    }
+  ],
+  "suggested_fix": "Set pm8001_ha->phy[phy_id].enable_completion = &completion only right before phy_start_req() in the branches that then call wait_for_completion(), and remove the unconditional assignment at the top of the function. Also clear enable_completion (set it to NULL) after the wait finishes, so the per-phy structure never keeps a pointer to a stack object after the function returns. The completion handler should check for NULL before calling complete()."
+}

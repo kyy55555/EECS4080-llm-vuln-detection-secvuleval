@@ -1,0 +1,10 @@
+▶ Scanning: samples/s029.c
+▶ Report:   results/s029.json
+I marked this function as vulnerable and wrote the result to `results/s029.json`. The bug is a missing NULL check, which can lead to a NULL pointer dereference (CWE-476).
+
+**Where it is:** When the function sets up the second flash chip, it builds the chip's name with `devm_kasprintf()` at `samples/s029.c:39`. That call returns NULL if it can't allocate memory, but the code never checks for that. Every other allocation in the function is checked.
+
+**Why it matters:** If the allocation fails, the second chip is registered with a NULL name. Code that later uses this name, such as when naming the flash device, could then dereference NULL and crash the kernel. This only happens when the system is low on memory.
+
+**Fix:** Right after the call, add `if (!pdata->name) return -ENOMEM;`.
+✔ Report written to results/s029.json

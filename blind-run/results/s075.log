@@ -1,0 +1,8 @@
+▶ Scanning: samples/s075.c
+▶ Report:   results/s075.json
+I found no vulnerability in this function, and I've written that to `results/s075.json` with `is_vulnerable: false` and an empty statement list.
+
+The risky part would be the index calculations: `num_levels - 3`, `num_levels - 2` and `num_levels - 1` are unsigned, so if `num_levels` were too small they would wrap around to a huge index and read far outside the array. Here, though, each calculation is guarded by a check (`num_levels > 2`, `> 1` and `> 0`) at `samples/s075.c:10-12`. If `num_levels` is 0, every index becomes 0, which is still inside the fixed-size `data` array. This looks like the already-fixed version of the code.
+
+The file also suggests some optional hardening: return early when `num_levels` is 0, and cap `num_levels` at the size of the `data` array. That second point matters only if a caller could pass a value larger than the array, which this file alone doesn't show.
+✔ Report written to results/s075.json

@@ -1,0 +1,8 @@
+▶ Scanning: samples/s144.c
+▶ Report:   results/s144.json
+I've written `results/s144.json`: the function is vulnerable, filed as CWE-125 (out-of-bounds read).
+
+**What's wrong:** `cougar_report_fixup` reads and writes bytes 2, 3, 115 and 116 of the report descriptor without checking how long the descriptor is (`*rsize`). The descriptor comes from the USB device. A malicious or malformed device can send one shorter than 117 bytes, and the function then reads past the end of the buffer (lines 4–5). If the bytes it reads happen to match the condition, lines 8–9 also write past the end. I chose CWE-125 because the read happens on every call. The write (CWE-787) only follows when the condition matches.
+
+**Suggested fix:** check `*rsize >= 117` before touching any byte, as the first part of the `if` condition, so every access stays inside the buffer.
+✔ Report written to results/s144.json

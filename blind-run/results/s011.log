@@ -1,0 +1,14 @@
+▶ Scanning: samples/s011.c
+▶ Report:   results/s011.json
+I saved the verdict to `results/s011.json`: the function is **vulnerable**, a NULL pointer dereference (CWE-476).
+
+The bug is at `samples/s011.c:58`:
+```c
+if (!bridge_dev && !bridge_dev->parent)
+```
+This check uses `&&` where it needs `||`.
+- **If `pci_get_host_bridge_device()` returns NULL:** the first test is true, so the code goes on to read `bridge_dev->parent` from a NULL pointer.
+- **If `bridge_dev` is valid but its `parent` is NULL:** the check doesn't return early, so `dev_get_drvdata()` is called with a NULL device.
+
+**Suggested fix:** change the line to `if (!bridge_dev || !bridge_dev->parent) return;`. The JSON also recommends calling `pci_put_host_bridge_device()` on every exit after the lookup. That's because I believe the lookup takes a reference, which the function never releases. I couldn't confirm this from the sample file alone, and it's a separate issue from the NULL dereference, so I didn't list it as a vulnerable statement.
+✔ Report written to results/s011.json

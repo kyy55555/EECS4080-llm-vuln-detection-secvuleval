@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "cmd_db_header = memremap(rmem->base, rmem->size, MEMREMAP_WC);",
+      "reason": "The mapping is created with plain memremap() and never released. If the probe fails later, the mapping is leaked."
+    },
+    {
+      "statement": "return -EINVAL;",
+      "reason": "When the magic check fails (line 21), the probe returns an error without calling memunmap(cmd_db_header). The mapping leaks, and the global cmd_db_header keeps pointing at memory the failed device no longer owns."
+    }
+  ],
+  "suggested_fix": "Use devm_memremap(&pdev->dev, rmem->base, rmem->size, MEMREMAP_WC) and check the result with IS_ERR(), so the mapping is released automatically when probe fails or the device is unbound. Another option is to call memunmap(cmd_db_header) and set cmd_db_header to NULL before returning -EINVAL on the magic-mismatch path."
+}

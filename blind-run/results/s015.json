@@ -1,0 +1,23 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-367",
+  "vulnerable_statements": [
+    {
+      "statement": "if ((pipe_ctx[i]->stream_res.tg != NULL) && pipe_ctx[i]->stream_res.tg->funcs) {",
+      "reason": "This line checks pipe_ctx[i]->stream_res.tg for NULL, but every later use reads the shared field again instead of keeping the pointer it checked. If the field is set to NULL at the same time (for example when dc_state_destruct() clears the resource context), the check passes and a later use dereferences NULL. This is a time-of-check/time-of-use race."
+    },
+    {
+      "statement": "pipe_ctx[i]->stream_res.tg->funcs->set_drr(",
+      "reason": "This reads stream_res.tg again after the NULL check. A concurrent change between the check and this line causes a NULL pointer dereference."
+    },
+    {
+      "statement": "if (pipe_ctx[i]->stream_res.tg->funcs->set_static_screen_control)",
+      "reason": "This also reads stream_res.tg again. The window is even wider here because it comes after the set_drr call, so the pointer may already have been cleared."
+    },
+    {
+      "statement": "pipe_ctx[i]->stream_res.tg->funcs->set_static_screen_control(",
+      "reason": "This reads stream_res.tg again with no new check, so it has the same race and can dereference NULL."
+    }
+  ],
+  "suggested_fix": "Read the timing generator pointer once into a local variable (struct timing_generator *tg = pipe_ctx[i]->stream_res.tg;). Check that tg and tg->funcs are not NULL, then use only that local tg for the set_drr and set_static_screen_control calls. That way the pointer checked is the same pointer used, even if the shared resource context is cleared concurrently."
+}

@@ -1,0 +1,10 @@
+▶ Scanning: samples/s133.c
+▶ Report:   results/s133.json
+I judged the function vulnerable and wrote the result to `results/s133.json`.
+
+**Finding: NULL pointer dereference (CWE-476)**
+- **Cause:** At line 11, the code gets the hive pointer from `amdgpu_get_xgmi_hive()`, which can return NULL. It never checks for that.
+- **Where it breaks:** Line 12 then reads `hive->device_list` in the `list_for_each_entry` loop. If `hive` is NULL, the kernel crashes there.
+- **When that can happen:** The device isn't part of an XGMI hive, or setting up the hive failed. I'm inferring this from what the function is for, since I only looked at this one file.
+- **Fix:** Add `if (!hive) return;` right after the call. Returning early also skips `amdgpu_put_xgmi_hive()`, which is correct because no hive reference was taken.
+✔ Report written to results/s133.json

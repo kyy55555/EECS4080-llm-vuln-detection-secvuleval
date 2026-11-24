@@ -1,0 +1,10 @@
+▶ Scanning: samples/s239.c
+▶ Report:   results/s239.json
+I judged `snd_byt_wm5102_mc_probe` in `samples/s239.c` not vulnerable and wrote that to `results/s239.json`: `is_vulnerable` is false, `cwe` is null and `vulnerable_statements` is empty.
+
+What I checked in the function:
+- **Device references:** The ACPI device reference is released with `acpi_dev_put()` only after its name has been read (lines 33–36). The codec device reference is released with `put_device()` right after `gpiod_get()` (lines 47–48).
+- **String buffers:** `codec_name` is filled with `snprintf`/`strscpy`, which both stop at the buffer size. The components string is also written with a size-limited `snprintf`.
+- **GPIO cleanup:** The speaker-power GPIO is requested without automatic cleanup (no `devm_`). After it is requested, every error path goes to `out_put_gpio`, which releases it with `gpiod_put()`.
+- **Array indexing:** The three name arrays have two entries each and are indexed with `FIELD_GET` on the quirk value, which a module parameter can override. The index is only safe if `BYT_WM5102_OUT_MAP` and `BYT_WM5102_IN_MAP` are single-bit masks. Their definitions are not in this file, so that part is an assumption: if either mask were wider, a crafted override could read past the end of the arrays.
+✔ Report written to results/s239.json

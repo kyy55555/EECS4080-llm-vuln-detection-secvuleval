@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The coefficient table is indexed as phase * taps + 2 * pair (+1). That index stays below (NUM_PHASES/2 + 1) * taps, which is the size of the filter table the caller picks to match 'taps'. The odd coefficient is read only when (pair*2+1) < taps. As defensive hardening, the function could take the filter length and check that (NUM_PHASES/2 + 1) * taps <= length before the loop, or check that taps is non-zero and within the hardware maximum."
+}

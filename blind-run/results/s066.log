@@ -1,0 +1,14 @@
+▶ Scanning: samples/s066.c
+▶ Report:   results/s066.json
+I've written `results/s066.json`. I judged the function vulnerable to an out-of-bounds read (CWE-125). This comes from reading the code only; I didn't compile or run anything.
+
+**The bug:** the code looks up a microphone name with `map_name[BYT_RT5640_MAP(byt_rt5640_quirk)]` at `samples/s066.c:204` and again at `samples/s066.c:210`. The `map_name` array has only 5 entries, and nothing checks that the index is below 5 first.
+
+**Why the index can be too big:** `byt_rt5640_quirk` is copied from the `quirk_override` module parameter (line 127) or from a DMI table entry (line 123). Either one can set the bits that `BYT_RT5640_MAP()` reads to a value above 4. I'm inferring that this macro reads more than one bit, because its definition isn't in this file. The bad entry is then passed to `snprintf` as a string, so the kernel could read memory it shouldn't or crash.
+
+**Suggested fix:** check the index against `ARRAY_SIZE(map_name)` before using it. If it's out of range, either fail with an error or fall back to a safe default and log a warning. Ideally, also check `quirk_override` when it's applied.
+
+Two other things in the file aren't vulnerabilities, so I left them out:
+- An `#endif` at line 212 no longer has a matching `#if`, because the `#if` line above it is commented out. That looks like an editing mistake in the sample and would stop it compiling.
+- I checked the error-handling paths for leaks of the `codec_dev` reference and found them correct.
+✔ Report written to results/s066.json

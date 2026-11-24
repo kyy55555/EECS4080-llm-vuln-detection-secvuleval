@@ -1,0 +1,101 @@
+cve,cwe,n_functions,functions,files
+CVE-2024-46731,CWE-125,1,atomctrl_retrieve_ac_timing,drivers/gpu/drm/amd/pm/powerplay/hwmgr/ppatomctrl.c
+CVE-2024-46722,CWE-125,1,amdgpu_atombios_init_mc_reg_table,drivers/gpu/drm/amd/amdgpu/amdgpu_atombios.c
+CVE-2024-46723,CWE-125,1,amdgpu_cgs_get_firmware_info,drivers/gpu/drm/amd/amdgpu/amdgpu_cgs.c
+CVE-2024-46747,CWE-125,1,cougar_report_fixup,drivers/hid/hid-cougar.c
+CVE-2024-46743,CWE-125,1,of_irq_parse_one,drivers/of/irq.c
+CVE-2024-46724,CWE-125,1,df_v1_7_get_hbm_channel_number,drivers/gpu/drm/amd/amdgpu/df_v1_7.c
+CVE-2024-47757,CWE-125,1,nilfs_btree_check_delete,fs/nilfs2/btree.c
+CVE-2024-46726,CWE-190,1,dcn_bw_update_from_pplib_fclks,drivers/gpu/drm/amd/display/dc/dml/calcs/dcn_calcs.c
+CVE-2024-47739,CWE-190,1,padata_do_serial,kernel/padata.c
+CVE-2024-47661,CWE-190,2,dmub_abm_set_pipe; dmub_abm_set_pipe,drivers/gpu/drm/amd/display/dc/dce/dmub_abm_lcd.c; drivers/gpu/drm/amd/display/dc/hwss/dcn21/dcn21_hwseq.c
+CVE-2024-47660,CWE-362,3,__fsnotify_update_child_dentry_flags; __fsnotify_parent; fsnotify_recalc_mask,fs/notify/fsnotify.c; fs/notify/mark.c
+CVE-2024-47679,CWE-362,1,evict_inodes,fs/inode.c
+CVE-2024-47689,CWE-362,1,f2fs_handle_critical_error,fs/f2fs/super.c
+CVE-2024-47668,CWE-362,1,__genradix_ptr_alloc,lib/generic-radix-tree.c
+CVE-2024-49859,CWE-362,1,f2fs_defragment_range,fs/f2fs/file.c
+CVE-2024-46687,CWE-415;CWE-416,1,btrfs_submit_chunk,fs/btrfs/bio.c
+CVE-2024-46673,CWE-415,1,aac_init_adapter,drivers/scsi/aacraid/comminit.c
+CVE-2024-46741,CWE-415,1,fastrpc_req_mmap,drivers/misc/fastrpc.c
+CVE-2024-49853,CWE-415,1,scmi_optee_chan_free,drivers/firmware/arm_scmi/optee.c
+CVE-2024-46782,CWE-416,1,ila_xlat_exit_net,net/ipv6/ila/ila_xlat.c
+CVE-2024-46696,CWE-416,1,nfsd4_cb_getattr_release,fs/nfsd/nfs4state.c
+CVE-2024-49854,CWE-416,1,bfq_init_rq,block/bfq-iosched.c
+CVE-2024-49852,CWE-416,1,efc_nport_vport_del,drivers/scsi/elx/libefc/efc_nport.c
+CVE-2024-46800,CWE-416,1,netem_dequeue,net/sched/sch_netem.c
+CVE-2024-46738,CWE-416,1,vmci_resource_remove,drivers/misc/vmw_vmci/vmci_resource.c
+CVE-2024-46740,CWE-416,1,binder_transaction,drivers/android/binder.c
+CVE-2024-46849,CWE-416,1,axg_card_add_tdm_loopback,sound/soc/meson/axg-card.c
+CVE-2024-47675,CWE-416,1,bpf_uprobe_multi_link_attach,kernel/trace/bpf_trace.c
+CVE-2024-46762,CWE-416,1,privcmd_irqfd_assign,drivers/xen/privcmd.c
+CVE-2024-46683,CWE-416,2,xe_exec_queue_create_ioctl; xe_preempt_fence_arm,drivers/gpu/drm/xe/xe_exec_queue.c; drivers/gpu/drm/xe/xe_preempt_fence.c
+CVE-2024-46746,CWE-416,1,amdtp_hid_remove,drivers/hid/amd-sfh-hid/amd_sfh_hid.c
+CVE-2024-46831,CWE-416,1,vcap_api_encode_rule_test,drivers/net/ethernet/microchip/vcap/vcap_api_kunit.c
+CVE-2024-46798,CWE-416,1,snd_soc_dai_link_event,sound/soc/soc-dapm.c
+CVE-2024-46858,CWE-416,2,mptcp_pm_del_add_timer; remove_anno_list_by_saddr,net/mptcp/pm_netlink.c
+CVE-2024-47747,CWE-416,1,ether3_remove,drivers/net/ethernet/seeq/ether3.c
+CVE-2024-49855,CWE-416,1,nbd_xmit_timeout,drivers/block/nbd.c
+CVE-2024-46674,CWE-416,1,st_dwc3_probe,drivers/usb/dwc3/dwc3-st.c
+CVE-2024-47732,CWE-416,1,remove_device_compression_modes,drivers/crypto/intel/iaa/iaa_crypto_main.c
+CVE-2024-47666,CWE-416,1,pm8001_phy_control,drivers/scsi/pm8001/pm8001_sas.c
+CVE-2024-46842,CWE-416,1,lpfc_get_sfp_info_wait,drivers/scsi/lpfc/lpfc_els.c
+CVE-2024-46796,CWE-416,1,smb2_set_path_size,fs/smb/client/smb2inode.c
+CVE-2024-46799,CWE-476,1,am65_cpsw_ndo_xdp_xmit,drivers/net/ethernet/ti/am65-cpsw-nuss.c
+CVE-2024-46793,CWE-476,9,broxton_audio_probe; snd_byt_cht_cx2072x_probe; bytcht_da7213_probe; snd_byt_cht_es8316_mc_probe; snd_byt_rt5640_mc_probe; snd_byt_rt5651_mc_probe; snd_byt_wm5102_mc_probe; snd_cht_mc_probe; snd_cht_mc_probe,sound/soc/intel/boards/bxt_rt298.c; sound/soc/intel/boards/bytcht_cx2072x.c; sound/soc/intel/boards/bytcht_da7213.c; sound/soc/intel/boards/bytcht_es8316.c; sound/soc/intel/boards/bytcr_rt5640.c; sound/soc/intel/boards/bytcr_rt5651.c; sound/soc/intel/boards/bytcr_wm5102.c; sound/soc/intel/boards/cht_bsw_rt5645.c; sound/soc/intel/boards/cht_bsw_rt5672.c
+CVE-2024-46691,CWE-476,1,pmic_glink_send,drivers/soc/qcom/pmic_glink.c
+CVE-2024-46810,CWE-476,1,tc_irq_handler,drivers/gpu/drm/bridge/tc358767.c
+CVE-2024-47688,CWE-476,1,module_add_driver,drivers/base/module.c
+CVE-2024-46805,CWE-476,1,psp_xgmi_reflect_topology_info,drivers/gpu/drm/amd/amdgpu/amdgpu_psp.c
+CVE-2024-46685,CWE-476,1,pcs_get_function,drivers/pinctrl/pinctrl-single.c
+CVE-2024-46765,CWE-476,3,ice_vsi_rebuild; ice_xdp; ice_xsk_pool_setup,drivers/net/ethernet/intel/ice/ice_lib.c; drivers/net/ethernet/intel/ice/ice_main.c; drivers/net/ethernet/intel/ice/ice_xsk.c
+CVE-2024-46802,CWE-476,1,dc_validate_stream,drivers/gpu/drm/amd/display/dc/core/dc_resource.c
+CVE-2024-46769,CWE-476,1,intel_spi_populate_chip,drivers/spi/spi-intel.c
+CVE-2024-46672,CWE-476,1,brcmf_pmksa_v3_op,drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+CVE-2024-46761,CWE-476,1,pnv_php_disable_irq,drivers/pci/hotplug/pnv_php.c
+CVE-2024-46693,CWE-476,3,qcom_battmgr_probe; pmic_glink_altmode_probe; pmic_glink_ucsi_probe,drivers/power/supply/qcom_battmgr.c; drivers/soc/qcom/pmic_glink_altmode.c; drivers/usb/typec/ucsi/ucsi_glink.c
+CVE-2024-46694,CWE-476,1,amdgpu_dm_plane_helper_prepare_fb,drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c
+CVE-2024-49850,CWE-476,1,bpf_core_apply,kernel/bpf/btf.c
+CVE-2024-46721,CWE-476,1,__aafs_profile_mkdir,security/apparmor/apparmorfs.c
+CVE-2024-46707,CWE-476,1,access_gic_sgi,arch/arm64/kvm/sys_regs.c
+CVE-2024-46860,CWE-476,1,mt7921_ipv6_addr_change,drivers/net/wireless/mediatek/mt76/mt7921/main.c
+CVE-2024-46742,CWE-476,2,parse_durable_handle_context; smb2_open,fs/smb/server/smb2pdu.c
+CVE-2024-46808,CWE-476,1,dpcd_extend_address_range,drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
+CVE-2024-46737,CWE-476,1,nvmet_tcp_install_queue,drivers/nvme/target/tcp.c
+CVE-2024-47756,CWE-476,1,ks_pcie_quirk,drivers/pci/controller/dwc/pci-keystone.c
+CVE-2024-46807,CWE-476,1,amdgpu_device_recover_vram,drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+CVE-2024-47743,CWE-476,1,find_asymmetric_key,crypto/asymmetric_keys/asymmetric_type.c
+CVE-2024-47752,CWE-476,1,vdec_h264_slice_decode,drivers/media/platform/mediatek/vcodec/decoder/vdec/vdec_h264_req_if.c
+CVE-2024-46795,CWE-476,1,smb2_sess_setup,fs/smb/server/smb2pdu.c
+CVE-2024-46763,CWE-476,2,fou_from_sock; fou_gro_receive,net/ipv4/fou_core.c
+CVE-2024-46727,CWE-476,1,resource_log_pipe_topology_update,drivers/gpu/drm/amd/display/dc/core/dc_resource.c
+CVE-2024-47754,CWE-476,1,vdec_h264_slice_single_decode,drivers/media/platform/mediatek/vcodec/decoder/vdec/vdec_h264_req_multi_if.c
+CVE-2024-46824,CWE-476,1,iommufd_hwpt_nested_alloc,drivers/iommu/iommufd/hw_pagetable.c
+CVE-2024-45028,CWE-476,1,mtf_test_write,drivers/mmc/core/mmc_test.c
+CVE-2024-46851,CWE-476,1,dcn10_set_drr,drivers/gpu/drm/amd/display/dc/hwss/dcn10/dcn10_hwseq.c
+CVE-2024-49857,CWE-476,1,iwl_mvm_ftm_set_secured_ranging,drivers/net/wireless/intel/iwlwifi/mvm/ftm-initiator.c
+CVE-2024-46760,CWE-476,1,rtw_usb_init_rx,drivers/net/wireless/realtek/rtw88/usb.c
+CVE-2024-47753,CWE-476,1,vdec_vp8_slice_decode,drivers/media/platform/mediatek/vcodec/decoder/vdec/vdec_vp8_req_if.c
+CVE-2024-46857,CWE-476,1,mlx5_eswitch_set_vepa,drivers/net/ethernet/mellanox/mlx5/core/esw/legacy.c
+CVE-2024-46720,CWE-476,1,amdgpu_device_gpu_recover,drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+CVE-2024-46698,CWE-476,2,sysfb_disable; aperture_remove_conflicting_pci_devices,drivers/firmware/sysfb.c; drivers/video/aperture.c
+CVE-2024-46835,CWE-476,1,gfx_v11_0_hw_init,drivers/gpu/drm/amd/amdgpu/gfx_v11_0.c
+CVE-2024-46714,CWE-476,1,wbscl_set_scaler_filter,drivers/gpu/drm/amd/display/dc/dcn20/dcn20_dwb_scl.c
+CVE-2024-46749,CWE-476,1,btnxpuart_flush,drivers/bluetooth/btnxpuart.c
+CVE-2024-46705,CWE-476,1,xe_device_probe,drivers/gpu/drm/xe/xe_device.c
+CVE-2024-46686,CWE-476,1,smb2_new_read_req,fs/smb/client/smb2pdu.c
+CVE-2024-47737,CWE-476,1,idmap_id_to_name,fs/nfsd/nfs4idmap.c
+CVE-2024-46770,CWE-476,1,ice_rebuild,drivers/net/ethernet/intel/ice/ice_main.c
+CVE-2024-46819,CWE-476,1,nbio_v7_4_handle_ras_controller_intr_no_bifring,drivers/gpu/drm/amd/amdgpu/nbio_v7_4.c
+CVE-2024-46677,CWE-476,1,gtp_encap_enable_socket,drivers/net/gtp.c
+CVE-2024-46735,CWE-476,1,ublk_ctrl_start_recovery,drivers/block/ublk_drv.c
+CVE-2024-47749,CWE-476,2,act_establish; act_open_rpl,drivers/infiniband/hw/cxgb4/cm.c
+CVE-2024-46850,CWE-476,1,dcn35_set_drr,drivers/gpu/drm/amd/display/dc/hwss/dcn35/dcn35_hwseq.c
+CVE-2024-47681,CWE-476,1,mt7996_mcu_sta_bfer_he,drivers/net/wireless/mediatek/mt76/mt7996/mcu.c
+CVE-2024-46739,CWE-476,1,hv_uio_rescind,drivers/uio/uio_hv_generic.c
+CVE-2024-46766,CWE-787,1,ice_free_q_vector,drivers/net/ethernet/intel/ice/ice_base.c
+CVE-2024-46853,CWE-787,1,nxp_fspi_fill_txfifo,drivers/spi/spi-nxp-fspi.c
+CVE-2024-45026,CWE-787,2,dasd_ese_needs_format; dasd_3990_erp_file_prot,drivers/s390/block/dasd.c; drivers/s390/block/dasd_3990_erp.c
+CVE-2024-45030,CWE-787,1,igb_set_rx_buffer_len,drivers/net/ethernet/intel/igb/igb_main.c
+CVE-2024-45025,CWE-787,2,copy_fd_bitmaps; TEST,fs/file.c; tools/testing/selftests/core/close_range_test.c
+CVE-2024-46725,CWE-787,1,amdgpu_ring_init,drivers/gpu/drm/amd/amdgpu/amdgpu_ring.c
+CVE-2024-46689,CWE-787,1,cmd_db_dev_probe,drivers/soc/qcom/cmd-db.c

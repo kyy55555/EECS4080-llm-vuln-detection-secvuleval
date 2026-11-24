@@ -1,0 +1,10 @@
+▶ Scanning: samples/s059.c
+▶ Report:   results/s059.json
+I found no vulnerability in `pmic_glink_altmode_probe` in `samples/s059.c`, and wrote that verdict to `results/s059.json` (`is_vulnerable: false`, `cwe: null`, no statements listed). I only read the code; nothing was compiled or run.
+
+The places where a bug would usually hide all look handled:
+- **Port number:** `port >= ARRAY_SIZE(altmode->ports)` rejects an out-of-range "reg" value, including the off-by-one case.
+- **Node references:** every early `return` inside `device_for_each_child_node()` first calls `fwnode_handle_put()`. The `continue` path doesn't need one, because the loop macro releases the reference itself.
+- **Cleanup:** the mux, retimer and switch handles are each freed through a `devm_add_action_or_reset()` action, so they are released on error and on removal.
+- **Order of setup:** the work items, completion and mutex are set up first. The DRM bridges are only added after all ports are configured. The pmic_glink client is created by `devm_pmic_glink_client_alloc()` and only registered at the very end with `pmic_glink_client_register()`. So no callback can arrive and touch half-initialised state.
+✔ Report written to results/s059.json

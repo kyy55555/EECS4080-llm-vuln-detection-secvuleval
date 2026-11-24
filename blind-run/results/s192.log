@@ -1,0 +1,11 @@
+▶ Scanning: samples/s192.c
+▶ Report:   results/s192.json
+I marked this function as vulnerable to a NULL pointer dereference (CWE-476) and wrote the result to `results/s192.json`.
+
+**The bug:** at `samples/s192.c:20`, `get_cap_buffer()` can return NULL when no capture buffer is available, and nothing checks for that.
+- **Bad pointer:** line 21 runs `container_of(fb, ...)` on the possibly-NULL `fb`, so `dst_buf_info` can be an invalid near-NULL pointer.
+- **Crash:** line 40 passes `&dst_buf_info->m2m_buf.vb` to `v4l2_m2m_buf_copy_metadata()`, which reads and writes through that pointer and can crash the kernel.
+- **The NULL case is expected:** lines 23 and 28 handle it with `fb ? ... : 0`, but the code that builds `dst_buf_info` doesn't.
+
+**Suggested fix:** check `fb` right after `get_cap_buffer()`. If it is NULL, log an error and return an error code (for example `-ENOMEM`) before `container_of()` or any use of `dst_buf_info`.
+✔ Report written to results/s192.json

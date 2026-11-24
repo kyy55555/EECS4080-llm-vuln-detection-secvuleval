@@ -1,0 +1,12 @@
+▶ Scanning: samples/s109.c
+▶ Report:   results/s109.json
+I judged the function in `samples/s109.c` not vulnerable and wrote that verdict to `results/s109.json`, with an empty list of vulnerable statements and `cwe` set to null.
+
+What I checked in the function:
+- **Copying the auth name:** `strscpy` copies it into `key.authname` and is limited to `sizeof(key.authname)`, so it can't write past the buffer.
+- **Reserving output space:** the code checks that `xdr_reserve_space()` succeeded before `xdr_encode_opaque()` writes to it. The amount reserved comes from the name's actual length, so the write stays inside the reserved space.
+- **Releasing the cache entry:** once `idmap_lookup` succeeds, every path out of the function releases the entry with `cache_put()`, so no reference is leaked.
+- **Long names:** a name longer than `IDMAP_NAMESZ` only triggers `WARN_ON_ONCE`, which logs a warning. It can't crash the kernel the way `BUG_ON` would.
+
+This is a judgement from this one file only, as instructed. It relies on the helper functions it calls behaving as their names suggest.
+✔ Report written to results/s109.json

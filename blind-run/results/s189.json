@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "rtw_usb_rx_resubmit(rtwusb, rxcb);",
+      "reason": "RX URBs are submitted to the USB core during the init stage of probe, before the rest of the device setup (e.g. chip info/core init, ieee80211 registration) has completed. If a later probe step fails, the error path frees rtwdev/rtwusb and the workqueue without killing these in-flight URBs. Their completion handlers (and the queued rx_work) can then run against freed memory, which is a use-after-free. Teardown also does not kill them before the workqueue is destroyed."
+    }
+  ],
+  "suggested_fix": "Split RX setup into two steps. rtw_usb_init_rx should only allocate the workqueue, the skb queue and the work item. A separate rtw_usb_setup_rx should submit the RX URBs, and it should run only after probe has fully succeeded (after ieee80211 registration). On every probe-failure and disconnect path, kill all RX URBs (usb_kill_urb), then cancel or flush rx_work, then destroy the workqueue, before any rtwdev/rtwusb memory is freed."
+}

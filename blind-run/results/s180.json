@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "if (vmci_handle_is_equal(r->handle, resource->handle)) {",
+      "reason": "The lookup matches entries by handle only. Two resources of different types (e.g. a datagram and a doorbell) can share the same handle in the hash table, so this may match a different resource object than the one being removed."
+    },
+    {
+      "statement": "hlist_del_init_rcu(&r->node);",
+      "reason": "If the matched entry r is not the one being removed, the wrong resource gets unlinked. The caller then frees 'resource' while it is still linked in the hash table (and r is wrongly unlinked). Later lookups or removals walk the list and touch freed memory, which is a use-after-free."
+    }
+  ],
+  "suggested_fix": "Only unlink the exact resource being removed. Add a type check (resource->type == r->type) to the match, or compare pointers (r == resource), before calling hlist_del_init_rcu(). That way a different resource that shares the same handle is never removed by mistake, and the freed resource never stays in the table."
+}

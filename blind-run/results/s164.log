@@ -1,0 +1,14 @@
+▶ Scanning: samples/s164.c
+▶ Report:   results/s164.json
+I found no vulnerability in `gtp_encap_enable_socket` and wrote that verdict to `results/s164.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+The function guards against the problems I'd expect at each step:
+
+- **Failed lookup:** if `sockfd_lookup` can't find the socket, the function returns `ERR_PTR(err)` and never touches the null pointer.
+- **Socket type:** it only accepts UDP datagram sockets in IPv4, or in IPv6 with IPv6-only mode set. Any other socket is rejected before its contents are used.
+- **Race on claiming the socket:** it checks whether another user already owns the socket (`sk_user_data`) and installs its own data while holding `lock_sock`. Two callers can't both claim the same socket.
+- **Lifetime:** it takes its own reference with `sock_hold()` before installing the tunnel callbacks, so the socket can't be freed while the GTP device is using it.
+- **Cleanup:** every exit path releases the lock and the file reference.
+
+This version looks like it already includes the input checks that older kernels lacked. I only reviewed this one file, so problems elsewhere in the GTP code, such as in the teardown function `gtp_encap_destroy`, are outside what I checked.
+✔ Report written to results/s164.json

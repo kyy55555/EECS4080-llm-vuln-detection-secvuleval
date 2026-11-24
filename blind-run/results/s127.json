@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The kirqfd is added to irqfds_list while holding an SRCU read lock (srcu_read_lock before list_add_tail, released only after vfs_poll/irqfd_inject), so a concurrent deassign that removes and frees the entry must wait in synchronize_srcu and cannot cause a use-after-free. Error paths correctly release the eventfd context, file reference and allocation, and duplicate eventfds are rejected under irqfds_lock."
+}

@@ -1,0 +1,15 @@
+▶ Scanning: samples/s023.c
+▶ Report:   results/s023.json
+I've written the verdict to `results/s023.json`: the function is **vulnerable**, as a use-after-free (CWE-416).
+
+**The flaw:** `sysfb_disable()` only runs when the device is the default VGA device (`samples/s023.c:10-11`). The loop that follows still runs for every device. It calls `aperture_detach_devices()`, which removes and frees the firmware framebuffer device (simpledrm or efifb).
+
+**How it goes wrong:**
+1. The boot display is a PCI device that isn't a VGA-class device, so `primary` is false and sysfb is never disabled.
+2. That device's driver loads and its memory ranges are detached, which frees the firmware framebuffer device. sysfb still keeps its pointer to it.
+3. A second GPU that is a VGA-class device loads later. It is the VGA default device, so it calls `sysfb_disable()`, which tries to remove the already-freed device again. That is a use-after-free or a NULL pointer dereference.
+
+**Suggested fix:** Call `sysfb_disable(&pdev->dev)` every time, and have it act only if the framebuffer belongs to this device. Keep the `primary` check only for removing the legacy VGA devices.
+
+This file only shows that sysfb is disabled for the VGA default device alone. The claim that sysfb keeps a stale pointer comes from my knowledge of how sysfb works in the kernel, not from this file. I also recall an upstream kernel fix for exactly this, but I didn't look it up, since the task ruled out other sources.
+✔ Report written to results/s023.json

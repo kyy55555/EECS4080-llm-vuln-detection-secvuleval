@@ -1,0 +1,14 @@
+▶ Scanning: samples/s024.c
+▶ Report:   results/s024.json
+I wrote the answer to `results/s024.json`: the function is vulnerable, and I classified it as CWE-129 (an array index that isn't properly checked).
+
+**The problem is at `samples/s024.c:9`:**
+```c
+tx_chn = &am65_ndev_to_common(ndev)->tx_chns[cpu % AM65_CPSW_MAX_TX_QUEUES];
+```
+The code chooses the transmit channel by taking the CPU number modulo the hard-coded maximum number of transmit queues. The device can run with fewer channels than that maximum (an admin can lower it with `ethtool -L`). When it does, XDP transmits on some CPUs land on a channel slot that was never set up or has already been torn down. The function then uses that slot's ID, queue and DMA resources, which can cause a NULL or invalid pointer dereference and memory corruption in the kernel.
+
+The index itself never runs past the end of the array, because the array is sized to the maximum. The danger is that the slot it picks may not be set up. CWE-476 (NULL pointer dereference) would also be a reasonable label, since that is the most likely result.
+
+**Suggested fix:** take the modulo against the number of channels actually configured: `cpu % common->tx_ch_num`. I wasn't allowed to read any other file, so I couldn't confirm that the field is called `tx_ch_num`; that's the name I expect from this driver.
+✔ Report written to results/s024.json

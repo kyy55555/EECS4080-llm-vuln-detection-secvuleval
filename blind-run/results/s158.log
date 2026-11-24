@@ -1,0 +1,17 @@
+▶ Scanning: samples/s158.c
+▶ Report:   results/s158.json
+I judged this function vulnerable to a use-after-free (CWE-416) and wrote the answer to `results/s158.json`.
+
+**The problem:** in `mptcp_pm_del_add_timer`, the function looks up the address entry while holding `msk->pm.lock`, then releases the lock and keeps using the entry. Another thread can free the entry in that window. The function would then read freed memory or stop a timer that is inside freed memory.
+
+**Statements flagged:**
+1. `if (entry && (!check_id || entry->addr.id == addr->id))` on line 14 repeats the check from line 10, but after the unlock. Reading `entry->addr.id` there is unprotected.
+2. `sk_stop_timer_sync(sk, &entry->add_timer);` on line 15 stops the timer on an entry that may already have been freed.
+
+**Suggested fix:**
+- Make the stop-the-timer decision while still holding the lock, and store it in a local flag instead of checking the entry again later.
+- When `check_id` is false, remove the entry from the list (`list_del`) under the lock.
+- Protect the lookup and the timer stop with `rcu_read_lock()`, and free entries with `kfree_rcu`, so the entry stays valid until the timer has stopped.
+
+Only `s158.c` was read. The answer comes from that file plus my general knowledge of this kernel code; nothing was looked up.
+✔ Report written to results/s158.json

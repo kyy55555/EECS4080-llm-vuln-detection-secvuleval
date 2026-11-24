@@ -1,0 +1,11 @@
+▶ Scanning: samples/s035.c
+▶ Report:   results/s035.json
+I wrote the verdict to `results/s035.json`: I found no vulnerability in `dmub_abm_set_pipe`, so `is_vulnerable` is `false` and `cwe` is `null`.
+
+The function only builds one firmware command and sends it:
+- **Memory is cleared first:** the command buffer is zeroed with `memset` (line 8) before any field is set, so no leftover stack data is sent to the firmware.
+- **Nothing is copied or indexed:** each field is set from a plain number passed in by the caller. There is no array access, no buffer copy and no pointer arithmetic.
+- **Fixed length:** `payload_bytes` comes from `sizeof` of the payload struct (line 16), so the caller can't change it.
+
+This verdict depends on the callers. The function never checks `abm` for NULL before using `abm->ctx`, and it passes `otg_inst`, `panel_inst` and `pwrseq_inst` to the firmware without checking their range. I've assumed the calling code validates both, which I couldn't confirm from this file alone. I noted this as defense-in-depth advice in `suggested_fix`.
+✔ Report written to results/s035.json

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-457",
+  "vulnerable_statements": [
+    {
+      "statement": "if (addr_len > (3 * sizeof(__be32)))",
+      "reason": "addr_len is declared without an initializer, and of_get_property() writes it only when the 'reg' property exists. If the node has no 'reg' property, addr is NULL and this comparison reads an uninitialized stack variable (undefined behavior). The check also runs before the code tests whether addr is NULL."
+    },
+    {
+      "statement": "addr_len = 3 * sizeof(__be32);",
+      "reason": "This clamp works on a value that may be uninitialized, so the bounds logic runs on an indeterminate value whenever the property is missing."
+    }
+  ],
+  "suggested_fix": "Initialize addr_len to 0, or move the length clamp inside the 'if (addr)' block so addr_len is only used after of_get_property() has set it. For example: if (addr) { if (addr_len > sizeof(addr_buf)) addr_len = sizeof(addr_buf); memcpy(addr_buf, addr, addr_len); }. As extra hardening, reject an intsize larger than MAX_PHANDLE_ARGS before the loop that fills out_irq->args."
+}

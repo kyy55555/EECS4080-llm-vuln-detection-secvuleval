@@ -1,0 +1,35 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "ASSERT(fclks->num_levels);",
+      "reason": "ASSERT only logs a warning in the kernel and does not stop execution, so the function keeps running when num_levels is 0."
+    },
+    {
+      "statement": "vmid0p72_idx = fclks->num_levels -\n\t\t(fclks->num_levels > 2 ? 3 : (fclks->num_levels > 1 ? 2 : 1));",
+      "reason": "When num_levels is 0, the unsigned subtraction 0 - 1 wraps around to UINT_MAX, which gives a huge index."
+    },
+    {
+      "statement": "vnom0p8_idx = fclks->num_levels - (fclks->num_levels > 1 ? 2 : 1);",
+      "reason": "When num_levels is 0, the unsigned subtraction wraps around to UINT_MAX."
+    },
+    {
+      "statement": "vmax0p9_idx = fclks->num_levels - 1;",
+      "reason": "When num_levels is 0, the unsigned subtraction wraps around to UINT_MAX."
+    },
+    {
+      "statement": "(fclks->data[vmid0p72_idx].clocks_in_khz / 1000.0)",
+      "reason": "Uses the wrapped index to read far outside fclks->data (out-of-bounds read)."
+    },
+    {
+      "statement": "(fclks->data[vnom0p8_idx].clocks_in_khz / 1000.0)",
+      "reason": "Uses the wrapped index to read far outside fclks->data (out-of-bounds read)."
+    },
+    {
+      "statement": "(fclks->data[vmax0p9_idx].clocks_in_khz / 1000.0)",
+      "reason": "Uses the wrapped index to read far outside fclks->data (out-of-bounds read)."
+    }
+  ],
+  "suggested_fix": "Add a real check before computing any index, for example 'if (!fclks->num_levels) return;' (keeping the ASSERT for debugging if wanted). Also make sure num_levels does not exceed the size of the data array (DM_PP_MAX_CLOCK_LEVELS), for example by clamping it, so every computed index stays within bounds."
+}

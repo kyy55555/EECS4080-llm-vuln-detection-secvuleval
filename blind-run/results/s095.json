@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "list_del(&entry->list);",
+      "reason": "The announce entry is unlinked from msk->pm.anno_list without holding the PM lock. mptcp_pm_del_add_timer() drops the lock before returning, so other paths that walk or modify anno_list at the same time (the add_addr timer, other remove paths, flush) can race with this unlink. That can lead to list corruption or a double list_del."
+    },
+    {
+      "statement": "kfree(entry);",
+      "reason": "The entry is freed right away, even though the add_addr retransmission timer callback or a concurrent list walker that found the entry under the lock or through RCU may still be using it. That is a use-after-free of the mptcp_pm_add_entry and of its embedded timer and list node."
+    }
+  ],
+  "suggested_fix": "Unlink the entry from anno_list inside mptcp_pm_del_add_timer() while msk->pm.lock is held, so the lookup and removal happen as one atomic step. Make sure the timer has been fully stopped (timer_shutdown_sync/sk_stop_timer_sync) before the memory is released. Free the entry with kfree_rcu() (or after an RCU grace period) instead of kfree(), so concurrent readers never touch freed memory. Return whether an entry was found based on the pointer, not by touching it after the free."
+}

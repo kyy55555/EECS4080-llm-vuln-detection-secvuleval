@@ -1,0 +1,14 @@
+▶ Scanning: samples/s151.c
+▶ Report:   results/s151.json
+I've written my answer to `results/s151.json`. I marked the function as **vulnerable** with a use-after-free (CWE-416), but my confidence is moderate, not high.
+
+**The finding:** At `samples/s151.c:730`, `smb2_open` reads the oplock pointer (`opinfo`) inside an RCU read lock but never takes a reference on it. The lock ends at line 732, yet the pointer is used again from line 757 on: `opinfo->is_lease`, `opinfo->o_lease->state`, and `create_lease_buf(rsp->Buffer, opinfo->o_lease)`. If another connection breaks the lease, closes the file or tears down a durable handle in that window, the object can be freed first. Freed kernel memory could then be read and copied into the SMB response.
+
+**Suggested fix:** Take a counted reference (`opinfo_get()` / `opinfo_put()`) for as long as the lease response is being built. Alternatively, copy the needed fields while still inside the RCU lock and stop using `opinfo` after it ends.
+
+**Why the confidence is moderate:** I checked the rest of the function and found no stronger candidate. The create-context length checks, the permission and ACL checks, the read-only share check and the lock/unlock pairing all look sound. I picked this one because the pointer is plainly used after the lock is released. Proving another thread could free it needs code outside this file, which the task ruled out.
+
+**Lesser issues I left out of the JSON:**
+- **Durable-handle reconnect failure (line 125):** if `ksmbd_vfs_getattr` fails on reconnect, the code jumps to `err_out2`. That skips both `ksmbd_revert_fsids` and `ksmbd_put_durable_fd`, which looks like a credential or reference leak.
+- **Wrong context offset (line 838):** for durable v2 requests, `next_off` is set to the v1 durable context size. This looks like a correctness bug, not a memory-safety one.
+✔ Report written to results/s151.json

@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "!link->link_enc->funcs->validate_output_with_stream(",
+      "reason": "link->link_enc is dereferenced without a NULL check. A link can have no link encoder bound to it, for example when encoders are assigned dynamically (USB4/DPIA or a link that is not yet assigned). Then link_enc is NULL and dereferencing it to reach funcs->validate_output_with_stream causes a NULL pointer dereference and a kernel oops."
+    }
+  ],
+  "suggested_fix": "Check that link->link_enc is non-NULL before dereferencing it, e.g. `if (link->ep_type == DISPLAY_ENDPOINT_PHY && link->link_enc && !link->link_enc->funcs->validate_output_with_stream(link->link_enc, stream))`. Or, if no encoder is available, return an error such as DC_FAIL_ENC_VALIDATE. Defensively, also check that stream->link and tg are non-NULL before using them."
+}

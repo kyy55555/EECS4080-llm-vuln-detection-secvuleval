@@ -1,0 +1,12 @@
+▶ Scanning: samples/s130.c
+▶ Report:   results/s130.json
+I found a use-after-free (CWE-416) in `xe_exec_queue_create_ioctl` and wrote the answer to `results/s130.json`.
+
+**The bug:** `xa_alloc` at `samples/s130.c:127` puts the new queue into the per-file lookup table before the function has finished setting it up. From that moment, user space can reach the queue by its id. The function then still writes to it at line 133 (`q->xef = xe_file_get(xef)`).
+
+**How it goes wrong:** queue ids are given out in order, so a second thread can guess the next one. If that thread calls the destroy ioctl in the gap between those two lines, the queue is removed from the table and freed. The write on line 133 then lands in freed memory. The reference taken on `xef` in that write is also never released.
+
+**Suggested fix:** finish setting up the queue, including `q->xef`, before inserting it, and make `xa_alloc` the very last step. Once the id is visible to user space, the function should not touch `q` again.
+
+This conclusion comes only from reading the code in this one file. I didn't compile or run anything to confirm the race.
+✔ Report written to results/s130.json

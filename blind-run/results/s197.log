@@ -1,0 +1,13 @@
+▶ Scanning: samples/s197.c
+▶ Report:   results/s197.json
+I found no security vulnerability in this function and wrote the result to `results/s197.json` (`is_vulnerable: false`, CWE `null`).
+
+`nfsd4_cb_getattr_release` is the clean-up step that runs when an NFS "get attributes" callback finishes. It does three things:
+1. It clears the busy flag.
+2. It wakes up anything waiting on that flag.
+3. It drops its reference to the delegation (`nfs4_put_stid`).
+
+That last step only makes sense if a reference was taken when the callback was started. This file doesn't show that code, so I'm assuming it happens there. With that pairing, the delegation can't be freed while the callback is still running, which rules out a use-after-free.
+
+The JSON's suggested fix field has one optional clean-up: replace `clear_bit()` + `wake_up_bit()` with `clear_and_wake_up_bit()`. That guarantees the memory ordering between clearing the flag and waking the waiters. It's hardening, not a fix for an exploitable bug.
+✔ Report written to results/s197.json

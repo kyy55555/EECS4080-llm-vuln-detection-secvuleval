@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "ret = list_empty(&rule->keyfields);",
+      "reason": "vcap_free_rule(rule) has already freed the rule (and its internal structure), so dereferencing rule->keyfields reads freed memory (use-after-free)."
+    },
+    {
+      "statement": "ret = list_empty(&rule->actionfields);",
+      "reason": "Same freed rule object is dereferenced again to read rule->actionfields after vcap_free_rule(), a use-after-free read."
+    }
+  ],
+  "suggested_fix": "Do not access the rule after calling vcap_free_rule(). Remove the post-free checks of rule->keyfields and rule->actionfields (and the pointless non-NULL check), or do these list checks before freeing the rule. If the test needs to confirm that the lists get emptied, check that in a way that doesn't touch the freed object."
+}

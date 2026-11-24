@@ -1,0 +1,12 @@
+▶ Scanning: samples/s102.c
+▶ Report:   results/s102.json
+I marked `samples/s102.c` as vulnerable (CWE-787, out-of-bounds write) and wrote the answer to `results/s102.json`.
+
+**The problem:** the loop `for (j = 0; j < mirror_top_info->num_nodes; j++)` takes its upper limit from `num_nodes`, which the AMD GPU's security processor firmware reports. Nothing checks it against the fixed size of the `nodes[]` array. If `num_nodes` is too large, the code reads past the end of the array (`nodes[j].node_id`). If that out-of-range entry happens to match, it also writes past the end (`nodes[j].num_hops`, `nodes[j].num_links`), which can corrupt nearby kernel memory.
+
+**CWE choice:** the out-of-bounds read happens first, so CWE-125 or the more general CWE-119 would also fit. I chose CWE-787 because the out-of-range writes are the more serious effect.
+
+**Uncertainty:** the array size isn't in this file. I've assumed it's the usual constant, `AMDGPU_XGMI_MAX_CONNECTED_NODES`, so the finding depends on that.
+
+**Suggested fix:** cap the loop at the array size, for example `min_t(int, num_nodes, AMDGPU_XGMI_MAX_CONNECTED_NODES)` or `ARRAY_SIZE(nodes)`. A sturdier fix is to check `num_nodes` when the topology data first comes back from the firmware, so no other code can use a bad value.
+✔ Report written to results/s102.json

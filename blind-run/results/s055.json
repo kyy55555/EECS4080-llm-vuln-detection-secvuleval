@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. The ACPI device reference is released with acpi_dev_put() after use, the codec device reference taken with get_device() is dropped on every error path, the software node is removed on the late error paths, and the speaker GPIO is released if card registration fails. As hardening, BYT_CHT_ES8316_MAP(quirk) could be bounds-checked against ARRAY_SIZE(mic_name) before indexing, since a root-set quirk_override module parameter could select an out-of-range map value."
+}

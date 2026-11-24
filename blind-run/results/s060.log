@@ -1,0 +1,13 @@
+▶ Scanning: samples/s060.c
+▶ Report:   results/s060.json
+I marked this function as vulnerable to an out-of-bounds read (CWE-125) and wrote the result to `results/s060.json`.
+
+The function looks up three kinds of durable-handle context: DH2C, DHnC and DH2Q. For each one it treats the client's data as a fixed-size structure and reads its fields. It never checks that the context's `DataOffset + DataLength` is as large as that structure. A client can send a context that is too short, and the reads then run past the end of the request buffer. The listed statements are:
+- **DH2C:** `recon_v2->Fid.PersistentFileId` (line 36) and the `CreateGuid` comparison after it.
+- **DHnC:** `recon->Data.Fid.PersistentFileId` (line 69).
+- **DH2Q:** `durable_v2_blob->CreateGuid` (line 96), plus the `Flags` and `Timeout` reads after it.
+
+**Suggested fix:** before reading each context, check that `DataOffset + DataLength` is at least the size of the matching structure, and return `-EINVAL` if it is not.
+
+I also saw a second, separate problem. In the DH2Q replay path (line 105), the code sets `fp->conn` to the new connection without checking whether the handle is still in use by another connection. That could lead to a use-after-free. I put the fix for it in `suggested_fix` (refuse handles that already have a connection), but I didn't list it as a vulnerable statement because the length checks are the main finding.
+✔ Report written to results/s060.json

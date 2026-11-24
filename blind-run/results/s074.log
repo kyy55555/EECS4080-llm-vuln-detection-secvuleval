@@ -1,0 +1,13 @@
+▶ Scanning: samples/s074.c
+▶ Report:   results/s074.json
+I've written the answer to `results/s074.json`: I marked the function as vulnerable with **CWE-476 (NULL pointer dereference)**, but I'm only moderately confident in that call.
+
+**The issue:** when `parent` is NULL, the function looks up the parent profile's directory with `prof_dir(p)` (`samples/s074.c:13`). It never checks whether that result is NULL before passing it to `aafs_create_dir("profiles", dent)` (line 15). If the parent profile has no filesystem directory, the "profiles" directory gets created in the wrong place or a NULL pointer is dereferenced. The result is then saved as the parent's child directory, so later code inherits the bad state.
+
+**Suggested fix:** right after `dent = prof_dir(p);`, add `if (!dent) { error = -ENOENT; goto fail2; }`.
+
+**Why I'm not fully confident:**
+- My verdict rests on a NULL check that I remember being added to this function upstream as a later fix, not on anything I could confirm from this file alone.
+- I checked the other suspicious spots and found nothing wrong. The `dirname` allocation (lines 23–33) is sized correctly for the `sprintf` that fills it. The error paths and the proxy reference counts look consistent.
+- The `#ifdef` near line 67 is commented out while its matching `#endif` at line 94 is still there. That looks like a leftover from how the sample was prepared, not part of the bug.
+✔ Report written to results/s074.json

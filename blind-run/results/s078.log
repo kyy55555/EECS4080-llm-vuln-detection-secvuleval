@@ -1,0 +1,10 @@
+▶ Scanning: samples/s078.c
+▶ Report:   results/s078.json
+I judged `scmi_optee_chan_free` in `samples/s078.c` to be vulnerable: it can dereference a NULL pointer (CWE-476). The answer is in `results/s078.json`.
+
+**The problem:** several SCMI protocols can share the same channel info structure, so this free routine can run more than once on the same one. The first call sets `cinfo->transport_info` to NULL at the end. On the next call, `channel` is NULL, but the function never checks for that. It goes straight to `list_del(&channel->link)` and then reads and writes other fields through the NULL pointer. That would crash the kernel while it tears the channel down.
+
+**Fix:** right after reading `cinfo->transport_info`, add `if (!channel) return 0;` so that freeing an already-freed channel does nothing.
+
+One caveat: the file doesn't show the shared-channel setup, which is defined elsewhere in the driver. The finding relies on that being how the code is used, not on something visible in this function alone.
+✔ Report written to results/s078.json

@@ -1,0 +1,11 @@
+▶ Scanning: samples/s209.c
+▶ Report:   results/s209.json
+I concluded that `ublk_ctrl_start_recovery` in `samples/s209.c` is **not vulnerable**, and wrote that to `results/s209.json` with `cwe` set to null and an empty list of vulnerable statements.
+
+- **Locking:** the function holds `ub->mutex` for its whole run, so the state checks and the reset can't race with other control commands.
+- **Queues never set up:** the `!ub->nr_queues_ready` check (line 11) blocks a recovery request on a device whose queues were never made ready. Without that check, `ublk_queue_reinit` could run on queues that don't exist yet. I believe that missing check was the bug the kernel fixed in this function, so this looks like the patched version. That's from my memory of kernel history; I didn't check any source outside the file.
+- **Device state:** recovery only proceeds when the old daemon has closed the device (`UB_STATE_OPEN` is clear) and the device is `UBLK_S_DEV_QUIESCED`. Anything else returns `-EBUSY`.
+- **Reset:** clearing `ub->mm`, `nr_queues_ready`, `nr_privileged_daemon` and the completion happens only after all those checks pass.
+
+I couldn't confirm what `ublk_queue_reinit` or `ublk_get_queue` do, because the task limited me to this one file.
+✔ Report written to results/s209.json

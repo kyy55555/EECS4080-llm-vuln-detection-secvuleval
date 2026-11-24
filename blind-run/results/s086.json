@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "err = xa_alloc(&xef->exec_queue.xa, &id, q, xa_limit_32b, GFP_KERNEL);",
+      "reason": "The exec queue is published in the per-file xarray, which makes it visible to userspace through its ID, before it is fully initialized. Once the mutex is dropped, a second thread can guess the ID and call the exec-queue destroy ioctl. That removes the queue and drops the last reference, which frees q."
+    },
+    {
+      "statement": "q->xef = xe_file_get(xef);",
+      "reason": "This runs after the queue is already visible to userspace and after the lock is released, so it can write to an exec queue that a concurrent destroy has already freed (use-after-free). The xef reference taken here is also leaked, and the destroy path sees an unset q->xef."
+    }
+  ],
+  "suggested_fix": "Finish initializing the exec queue before publishing it. Set q->xef = xe_file_get(xef) before xa_alloc(), and in the xa_alloc error path drop that reference (the normal queue teardown can do this). Only store args->exec_queue_id after the queue is fully set up. Do not touch q after it is inserted into the xarray unless you hold your own reference."
+}

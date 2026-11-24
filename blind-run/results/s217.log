@@ -1,0 +1,12 @@
+▶ Scanning: samples/s217.c
+▶ Report:   results/s217.json
+The function is vulnerable: a use-after-free (CWE-416) in `fastrpc_req_mmap`, `samples/s217.c`. I wrote the answer to `results/s217.json`.
+
+**The problem:**
+- At line 82, the buffer is added to the shared `fl->mmaps` list before the last step that can fail, the `copy_to_user` at line 85.
+- If that copy fails, the code jumps to `err_assign` and frees the buffer with `fastrpc_buf_free(buf)`. It never removes the buffer from the list first.
+- That leaves a pointer to freed memory on the list. A later munmap or file-release cleanup will use it, which is a use-after-free or a double free.
+- There is also a race. Once the buffer is on the list, another thread can find and free it with an munmap request. This function may then use it or free it a second time.
+
+**Suggested fix:** Add the buffer to the list only after `copy_to_user` succeeds, so a failure is cleaned up while the buffer is still private to this function. The alternative is to remove it from the list under `fl->lock` before freeing it on the error path.
+✔ Report written to results/s217.json

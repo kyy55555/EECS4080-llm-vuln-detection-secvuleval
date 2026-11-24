@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "btrfs_cleanup_bio(bbio);",
+      "reason": "On the error path after a split, the split bbio is freed directly with btrfs_cleanup_bio() (dropping its bio and ordered-extent/bioc references) instead of being completed through the normal end_io path. Its range has already been carved off the original bbio, and state such as the bioc reference added to the ordered extent's bioc_list or the per-split ordered/csum state is torn down inconsistently, leaving dangling references that are later used (use-after-free / refcount imbalance)."
+    },
+    {
+      "statement": "btrfs_bio_end_io(orig_bbio, ret);",
+      "reason": "After a split, the error is reported on orig_bbio (the remaining, not-yet-submitted part) rather than on the current failing bbio. The split bbio's completion accounting (pending I/O count on the parent / ordered extent) is skipped, while orig_bbio is ended even though it may still be referenced by the already-split child, resulting in ordered-extent/bio lifetime mismatches and a use-after-free when completion runs."
+    }
+  ],
+  "suggested_fix": "On failure, do not free the split bbio with btrfs_cleanup_bio() and end orig_bbio. Instead, after btrfs_bio_counter_dec(), if the bio was split (map_length < length), end the remaining original bbio (bbio->private / orig_bbio) with the error and also end the current split bbio via btrfs_bio_end_io(bbio, ret), so both halves go through the normal completion path that correctly drops ordered-extent, bioc and parent references exactly once."
+}

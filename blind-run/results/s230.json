@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix needed. The VF check correctly applies WARN_ON to the whole condition (type == VF && !vf). ice_vsi_realloc_stat_arrays() runs before ice_vsi_decfg()/ice_vsi_cfg_def(), so the stat arrays are resized while the old queue counts are still valid. The coalesce buffer is freed on every path. One small hardening option: if the kcalloc of coalesce fails, return -ENOMEM through a cleanup label so the error path matches the others."
+}

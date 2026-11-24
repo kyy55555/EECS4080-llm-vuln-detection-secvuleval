@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix needed. The release callback drops the delegation reference taken when the CB_GETATTR was queued (nfs4_put_stid), so the delegation cannot be freed while the callback is in flight. As a hardening/clean-up step, clear_bit() + wake_up_bit() could be replaced with clear_and_wake_up_bit() so the barrier between clearing the bit and waking the waiters is guaranteed."
+}

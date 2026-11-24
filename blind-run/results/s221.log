@@ -1,0 +1,13 @@
+▶ Scanning: samples/s221.c
+▶ Report:   results/s221.json
+I don't think this function has a security vulnerability, and I wrote that verdict to `results/s221.json`.
+
+**What it does:** `igb_set_rx_buffer_len` picks the receive buffer size for a ring in the igb network driver. It switches to large receive buffers if any of these is true:
+- the maximum frame size is bigger than the normal small-buffer path allows;
+- 2K buffers are too small once padding is added;
+- "store bad packet" mode is on (the `E1000_RCTL_SBP` flag), in which the card also keeps oversized frames instead of dropping them.
+
+**Why it's safe:** The store-bad-packet check (`rd32(E1000_RCTL) & E1000_RCTL_SBP`) is the safeguard here. Without it, the card could write an oversized frame past the end of a 2K buffer. Because the check is present, this looks like the fixed version of the function rather than the vulnerable one.
+
+**One oddity:** The two `#if (PAGE_SIZE < 8192)` lines are commented out but their matching `#endif` lines aren't, so the file wouldn't compile as written. That looks like a side effect of how the sample was prepared, not a security flaw, and I noted it in the JSON.
+✔ Report written to results/s221.json

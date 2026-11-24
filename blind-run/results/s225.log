@@ -1,0 +1,15 @@
+▶ Scanning: samples/s225.c
+▶ Report:   results/s225.json
+I judged `amdgpu_ring_init` in `samples/s225.c` to be vulnerable: it can write past the end of an array (CWE-787). I've written the answer to `results/s225.json`.
+
+The problem is in the block at lines 160–165 that registers the ring with the scheduler:
+- **Wrong first index:** `hw_ip` comes from `ring->funcs->type`. Some ring types, such as KIQ and MES, likely have values at or above `AMDGPU_HW_IP_NUM`, which is the size of the first dimension of `gpu_sched`. That last point relies on what I remember of the kernel headers, because the constants aren't defined in this file.
+- **Unchecked priority:** `hw_prio` is never checked against `AMDGPU_RING_PRIO_MAX`.
+- **Unchecked count:** `(*num_sched)++` is used as an index into `sched[]` without checking whether that array is already full.
+
+Any of these lets the code write a scheduler pointer past the end of the array.
+
+**Suggested fix:** only register the ring when `ring->funcs->type < AMDGPU_HW_IP_NUM`. Also check that `hw_prio < AMDGPU_RING_PRIO_MAX`. Before adding a scheduler, check `*num_sched` against the size of `sched[]` and return an error or warn if it's full.
+
+I also noticed that the error returns leak the write-back slots already allocated in the same function. That's a resource leak rather than a memory-safety bug, so I left it out of the JSON.
+✔ Report written to results/s225.json

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s110.c
+▶ Report:   results/s110.json
+I found no security vulnerability in `gfx_v11_0_hw_init` and wrote that verdict to `results/s110.json`: not vulnerable, no CWE, no vulnerable statements. I'm moderately confident; I only had this one file to work from.
+
+Why I judged it safe:
+- **Optional callbacks are checked first.** The IMU function table and each of its callbacks (`program_rlc_ram`, `load_microcode`, `setup_imu`, `start_imu`) are checked for NULL before being called. So is the `gc_doorbell_init` callback.
+- **Errors are passed back.** Every function that can fail is checked, and its error code is returned straight away. Nothing needs cleaning up on those paths because this function doesn't allocate anything.
+- **SMU firmware loading is skipped on APUs**, so that call only happens on discrete GPUs.
+- **No memory risks.** There are no buffers indexed by untrusted lengths and no object-lifetime issues.
+
+**Remaining risk:** the code assumes `adev->nbio.funcs` itself is never NULL. I couldn't confirm that because the code that sets it isn't in this file, but in the normal driver it is always set during device setup.
+✔ Report written to results/s110.json

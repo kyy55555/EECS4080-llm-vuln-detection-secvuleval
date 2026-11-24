@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. The function checks num_codecs before dereferencing codecs->name, bounds the codec name and component strings with snprintf, drops the ACPI device reference with acpi_dev_put() after use, takes a reference on codec_dev with get_device() and releases it on every error path, and unwinds the software node and driver GPIOs in reverse order. As hardening, the map_name index (BYT_RT5640_MAP(quirk)) could be clamped to ARRAY_SIZE(map_name), because a quirk_override module parameter set by root could otherwise select an out-of-range entry."
+}

@@ -1,0 +1,9 @@
+▶ Scanning: samples/s041.c
+▶ Report:   results/s041.json
+I found no vulnerability in `nvmet_tcp_install_queue` and wrote that verdict to `results/s041.json` (`is_vulnerable: false`, no CWE, no vulnerable statements).
+
+- **Failed allocation is handled:** if `nvmet_tcp_alloc_cmds()` fails, the function sets `queue->nr_cmds` back to 0 before returning an error (`samples/s041.c:24`). Without that reset, `nr_cmds` would stay non-zero even though no command array exists. Code that later walks the commands during teardown could then hit a NULL pointer or freed memory. This looks like the already-fixed version of that bug, though I'm going only from this one file.
+- **The queue list is locked:** the loop over the shared queue list, which counts controllers still disconnecting, runs while holding `nvmet_tcp_queue_mutex` (lines 11–17).
+
+The JSON's `suggested_fix` field says no fix is required and explains why the reset matters.
+✔ Report written to results/s041.json

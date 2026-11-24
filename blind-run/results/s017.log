@@ -1,0 +1,13 @@
+▶ Scanning: samples/s017.c
+▶ Report:   results/s017.json
+I found no vulnerability in `pmic_glink_ucsi_probe` and wrote that verdict to `results/s017.json`. It sets `is_vulnerable` to false, `cwe` to null and leaves `vulnerable_statements` empty.
+
+What I checked:
+- **Reference counting in the child-node loop:** `device_for_each_child_node` holds a reference to the current `fwnode`. Both early returns, for the missing `reg` property and for the GPIO error, call `fwnode_handle_put(fwnode)` before returning. Older versions of this driver leaked this reference on an error path, but this version has the fix. The `continue` paths don't need a put because the loop macro handles it.
+- **Array bounds:** `port` comes from firmware. It is checked against `PMIC_GLINK_MAX_PORTS` before it is used to index `ucsi->port_orientation[port]` (lines 49 and 65).
+- **Error handling:** The results of `devm_kzalloc`, `ucsi_create`, `devm_add_action_or_reset` and `devm_pmic_glink_client_alloc` are all checked. The cleanup action is registered right after `ucsi_create`, so the ucsi object is destroyed on any later failure.
+
+This conclusion rests only on this function. I didn't see the helper functions or the quirk table that `match->data` points to.
+
+The `suggested_fix` field gives an optional hardening step instead of a fix: use `device_for_each_child_node_scoped()` so the node reference is released automatically if the loop is edited later.
+✔ Report written to results/s017.json

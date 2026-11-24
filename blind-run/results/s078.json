@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "struct scmi_optee_channel *channel = cinfo->transport_info;",
+      "reason": "Several SCMI protocols can share the same scmi_chan_info, so this idr callback can run more than once on the same cinfo. The first call sets cinfo->transport_info to NULL. On a later call, channel is NULL, and the function never checks for that."
+    },
+    {
+      "statement": "list_del(&channel->link);",
+      "reason": "If transport_info was already cleared by an earlier free, channel is NULL and list_del dereferences an invalid pointer derived from NULL. The later reads of channel->tee_session and channel->tee_shm, and the write to channel->cinfo, also use the NULL pointer. This can oops the kernel during teardown."
+    }
+  ],
+  "suggested_fix": "Right after reading cinfo->transport_info, return early if channel is NULL (for example 'if (!channel) return 0;'). This covers a shared channel that an earlier call already freed and makes the free routine safe to call more than once."
+}

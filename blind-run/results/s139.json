@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-119",
+  "vulnerable_statements": [
+    {
+      "statement": "r = amdgpu_bo_pin(rbo, domain);",
+      "reason": "The scanout buffer is pinned without first requiring it to be physically contiguous in VRAM. Display hardware (DCN) scans out the framebuffer as one linear physical range starting at the address taken from amdgpu_bo_gpu_offset(). If the BO is spread across non-contiguous VRAM pages, the display engine reads and, with DCC/writeback, may write memory outside the BO. That memory can belong to other buffers or other processes."
+    },
+    {
+      "statement": "afb->address = amdgpu_bo_gpu_offset(rbo);",
+      "reason": "This programs the display with the start offset of a BO that may not be contiguous, so the address range the hardware uses can cover VRAM the framebuffer does not own."
+    }
+  ],
+  "suggested_fix": "Before pinning a scanout buffer that may be placed in VRAM, require contiguous placement, for example by setting rbo->flags |= AMDGPU_GEM_CREATE_VRAM_CONTIGUOUS before calling amdgpu_bo_pin(). Another option is to use a pin variant that enforces contiguity. Then the GPU offset given to the display hardware covers only memory owned by the framebuffer."
+}

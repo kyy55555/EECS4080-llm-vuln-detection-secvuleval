@@ -1,0 +1,23 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "if (rdesc[2] == 0x09 && rdesc[3] == 0x02 &&",
+      "reason": "The report descriptor comes from the device, and its length (*rsize) is never checked. A short descriptor (fewer than 4 bytes) makes these reads go past the end of the buffer."
+    },
+    {
+      "statement": "(rdesc[115] | rdesc[116] << 8) >= HID_MAX_USAGES) {",
+      "reason": "Reads offsets 115 and 116 without checking that *rsize >= 117. A malicious or malformed USB device can supply a shorter descriptor, which causes a slab out-of-bounds read."
+    },
+    {
+      "statement": "rdesc[115] = ((HID_MAX_USAGES-1) & 0xff);",
+      "reason": "Writes to offset 115 without checking the length, so a short descriptor allows an out-of-bounds write."
+    },
+    {
+      "statement": "rdesc[116] = ((HID_MAX_USAGES-1) >> 8);",
+      "reason": "Writes to offset 116 without checking the length, so a short descriptor allows an out-of-bounds write."
+    }
+  ],
+  "suggested_fix": "Check the descriptor length before touching any byte, e.g. `if (*rsize >= 117 && rdesc[2] == 0x09 && rdesc[3] == 0x02 && (rdesc[115] | rdesc[116] << 8) >= HID_MAX_USAGES)`. This keeps all reads and writes at offsets 2, 3, 115 and 116 inside the buffer the device supplied."
+}

@@ -1,0 +1,13 @@
+▶ Scanning: samples/s111.c
+▶ Report:   results/s111.json
+I marked `sysfb_disable()` as vulnerable and wrote the result to `results/s111.json`. I'm only moderately confident: the finding depends on `sysfb_parent_dev()` taking a reference, and that function isn't in this file.
+
+**The problem:** a reference count is never decremented (CWE-911, "Improper Update of Reference Count").
+- **Where:** `if (!dev || dev == sysfb_parent_dev(si))`
+- **Why:** `sysfb_parent_dev()` probably looks up the parent PCI device in a way that takes a reference on it. The function only uses the returned pointer for a comparison and then discards it. Nothing ever releases that reference, so each call leaks one and the PCI device can never be freed.
+- **Secondary issue:** the returned value is also not checked for an error pointer with `IS_ERR()`. On its own this does little harm, since the code only compares it.
+
+**Suggested fix:** store the parent device in a local variable. If it is an error pointer, unlock and return. Otherwise compare it with `dev`, call `sysfb_unregister()` if they match, and release the reference with `put_device(parent)` before unlocking the mutex.
+
+The mutex itself is used correctly, so I didn't report a race condition.
+✔ Report written to results/s111.json

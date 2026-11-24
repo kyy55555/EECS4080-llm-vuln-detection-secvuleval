@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The specs allocation is NULL-checked before the mutex is taken. The candidate array is only allocated when cc->cnt is non-zero, which avoids the zero-size allocation that kcalloc would return as ZERO_SIZE_PTR, and that allocation is NULL-checked. The cand_cache_mutex is held from the cache lookup through bpf_core_calc_relo_insn/bpf_core_patch_insn, so module BTF cannot be freed while it is in use. Every error path after the lock goes through 'out', which frees the allocations and unlocks exactly once."
+}

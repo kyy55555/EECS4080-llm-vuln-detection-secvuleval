@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "struct hv_device *hv_dev = channel->primary_channel->device_obj;",
+      "reason": "The rescind callback is invoked for primary VMBus channels, whose primary_channel pointer is always NULL (it is only set for sub-channels). Dereferencing channel->primary_channel->device_obj therefore causes a kernel NULL pointer dereference (oops/DoS) when the host rescinds the device."
+    }
+  ],
+  "suggested_fix": "Get the hv_device directly from the channel being rescinded (struct hv_device *hv_dev = channel->device_obj;), since the rescind callback is only registered for primary channels. If sub-channels might ever reach this path, choose channel->primary_channel ? channel->primary_channel->device_obj : channel->device_obj, and check that hv_dev and pdata are not NULL before using them."
+}

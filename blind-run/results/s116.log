@@ -1,0 +1,10 @@
+▶ Scanning: samples/s116.c
+▶ Report:   results/s116.json
+I've written the result to `results/s116.json`. My verdict is that the function is vulnerable to a memory leak (CWE-401).
+
+**The bug:** at `samples/s116.c:11`, `smb2_plain_req_init()` allocates the request buffer `req`. On the RDMA path, if `smbd_register_mr()` fails, the function returns `-EAGAIN` at line 49 without freeing `req`. It also never stores `req` in `*buf`, so the caller can't free it either. Each failed memory registration leaks one request buffer, and repeated failures and retries could slowly use up kernel memory.
+
+**Suggested fix:** free the buffer before returning on that path (`cifs_small_buf_release(req); return -EAGAIN;`), or send all error exits through one cleanup label that frees `req`.
+
+**Confidence:** this was a judgement call, not a certain finding. Working only from this file, the leak is the only real defect I found. The rest of the function, including the `server == NULL` check after the allocation call and the length arithmetic, looks consistent with the usual SMB2 request-building code. One thing I couldn't confirm: the `*total_len += sizeof(*v1) - 1` line is only correct if the struct's `Buffer` field is a one-byte array, and its definition isn't in this file.
+✔ Report written to results/s116.json

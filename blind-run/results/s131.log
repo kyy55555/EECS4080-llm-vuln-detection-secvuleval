@@ -1,0 +1,16 @@
+▶ Scanning: samples/s131.c
+▶ Report:   results/s131.json
+I judged the function vulnerable and wrote the answer to `results/s131.json`, classed as CWE-843 (type confusion).
+
+**The problem:** The function checks the parent page table with only `parent->auto_domain || !parent->nest_parent` (`samples/s131.c:15`). It never checks that the parent's domain belongs to the same IOMMU driver as the device, i.e. that `parent->common.domain->owner == ops`. On a system with more than one IOMMU driver, a user can create a parent page table with one driver and then pass it with a device that belongs to a different driver. That other driver's `domain_alloc_user` (`samples/s131.c:27`) treats the foreign domain as one of its own. It then reads and writes fields that don't exist in that object, which can corrupt kernel memory or read out of bounds.
+
+**Suggested fix:** Add the owner check to the existing validation, so a mismatched parent is rejected with `-EINVAL`:
+
+```c
+if (parent->auto_domain || !parent->nest_parent ||
+    parent->common.domain->owner != ops)
+	return ERR_PTR(-EINVAL);
+```
+
+The JSON lists both lines as vulnerable statements. The check at line 15 is the missing validation; the call at line 27 is where the wrong domain type reaches the driver.
+✔ Report written to results/s131.json

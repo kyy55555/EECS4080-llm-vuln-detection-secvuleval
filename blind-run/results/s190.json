@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "rhashtable_free_and_destroy(&ilan->xlat.rhash_table, ila_free_cb, NULL);",
+      "reason": "The ILA xlat rhashtable and its entries are freed while the netfilter hooks (ila_nf_hook_ops) are still registered for this netns. A packet still being processed can enter the ILA hook and look up the already-destroyed table, which is a use-after-free."
+    },
+    {
+      "statement": "free_bucket_spinlocks(ilan->xlat.locks);",
+      "reason": "The bucket spinlocks are freed while the hooks are still live, so a concurrent hook or lookup can use freed lock memory."
+    },
+    {
+      "statement": "nf_unregister_net_hooks(net, ila_nf_hook_ops,",
+      "reason": "The hooks are unregistered only after the data they use has been freed. They must be removed, with an RCU grace period, before the table and locks are torn down."
+    }
+  ],
+  "suggested_fix": "Unregister the netfilter hooks before freeing any xlat state. For example, add a pre_exit pernet handler (ila_xlat_pre_exit_net) that calls nf_unregister_net_hooks() when hooks_registered is set. The netns core runs synchronize_rcu() between pre_exit and exit, so no hook can still be running when ila_xlat_exit_net() later calls rhashtable_free_and_destroy() and free_bucket_spinlocks()."
+}

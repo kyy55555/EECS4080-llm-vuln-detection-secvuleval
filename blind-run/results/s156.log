@@ -1,0 +1,12 @@
+▶ Scanning: samples/s156.c
+▶ Report:   results/s156.json
+I marked `bpf_uprobe_multi_link_attach` in `samples/s156.c` as vulnerable and wrote the answer to `results/s156.json`, using CWE-20 (Improper Input Validation).
+
+**The problem:** the function takes three pointers from the caller's attributes: `uoffsets`, `uref_ctr_offsets` and `ucookies`. It reads from them with `__get_user()` (lines 78, 86 and 90) but never checks the addresses first with `access_ok()`. `__get_user()` doesn't check that an address is in user space. So a caller can pass a kernel address, and the kernel will read its own memory as if it came from the user.
+
+**Suggested fix:** use `get_user()`, which does the address check itself. Alternatives are to call `access_ok()` on each array for `cnt` elements before the loop, or to copy each whole array with `copy_from_user()`. The suggested-fix text in the JSON also says the upstream kernel fix switched these reads to `get_user()`. That comes from memory, not from the sample file, so you may want to drop or verify it given the file-only rule.
+
+**Choices you may want to check:**
+- **CWE:** I chose CWE-20. Your answer key may file this under something more specific, such as an out-of-bounds read (CWE-125).
+- **Error handling:** I also looked at the error-cleanup paths, the check that offsets are not negative, and the limit on `cnt`. None of them looked exploitable, so they're not in the JSON.
+✔ Report written to results/s156.json

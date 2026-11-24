@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "persistent_id = recon_v2->Fid.PersistentFileId;",
+      "reason": "The create context found by smb2_find_context_vals() is cast to struct create_durable_reconn_v2_req and its fields (Fid, then CreateGuid in the memcmp) are read. Nothing checks that the client-supplied DataOffset + DataLength covers sizeof(struct create_durable_reconn_v2_req), so a short DH2C context makes the server read past the end of the request buffer."
+    },
+    {
+      "statement": "persistent_id = recon->Data.Fid.PersistentFileId;",
+      "reason": "The DHnC context is cast to struct create_durable_reconn_req and dereferenced without checking that the context data is at least sizeof(struct create_durable_reconn_req). A truncated context causes an out-of-bounds read."
+    },
+    {
+      "statement": "dh_info->fp = ksmbd_lookup_fd_cguid(durable_v2_blob->CreateGuid);",
+      "reason": "The DH2Q context is cast to struct create_durable_req_v2 and its CreateGuid, Flags and Timeout are read without checking that the context data is at least sizeof(struct create_durable_req_v2). This is an out-of-bounds read of attacker-controlled request data."
+    }
+  ],
+  "suggested_fix": "Before casting the context to its durable-handle structure in each case (DH2C, DHnC, DH2Q), check that le16_to_cpu(context->DataOffset) + le32_to_cpu(context->DataLength) >= sizeof(the corresponding struct). If the check fails, set err = -EINVAL and goto out. This ensures every field read stays inside the received create context."
+}

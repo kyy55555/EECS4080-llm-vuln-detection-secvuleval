@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-457",
+  "vulnerable_statements": [
+    {
+      "statement": "struct iwl_mvm_ftm_iter_data target;",
+      "reason": "The on-stack iter data is declared without initialization and only target.bssid is set; the cipher and tk output pointer fields are left as uninitialized stack garbage."
+    },
+    {
+      "statement": "ieee80211_iter_keys(mvm->hw, vif, iter, &target);",
+      "reason": "The key iterator callback writes the matching key's cipher and key material through target.cipher and target.tk. Because those pointers were never set, it writes through uninitialized pointers, which can corrupt arbitrary kernel memory. The caller's tk and cipher buffers are also never filled, so stale or uninitialized key data is sent to firmware."
+    }
+  ],
+  "suggested_fix": "Fully initialize the iterator data before calling ieee80211_iter_keys(), for example: struct iwl_mvm_ftm_iter_data target = { .cipher = cipher, .bssid = bssid, .tk = tk }; or zero-initialize it with = {} and then set target.cipher = cipher and target.tk = tk along with target.bssid. This makes the callback write into the caller's buffers instead of through garbage pointers."
+}

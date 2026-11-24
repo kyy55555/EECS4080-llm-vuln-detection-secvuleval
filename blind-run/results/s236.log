@@ -1,0 +1,12 @@
+▶ Scanning: samples/s236.c
+▶ Report:   results/s236.json
+I judged `bytcht_da7213_probe` in `samples/s236.c` not vulnerable and wrote that to `results/s236.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+What I checked:
+- **Codec name write:** `snprintf` into `codec_name` is limited to the buffer size, so it can't overflow.
+- **ACPI device reference:** the device's name is read before `acpi_dev_put(adev)` drops the reference, so nothing is used after release. `acpi_dev_put` is safe to call when no device was found.
+- **Codec lookup loop:** `codecs->name` is only read when that entry has at least one codec, so the pointer is never empty when it's used.
+- **Error paths:** failures from the platform-name fixup and from card registration are both checked and returned.
+
+One side note that isn't a security bug: line 54 changes the driver's shared power-management settings (`pdev->dev.driver->pm = &snd_soc_pm_ops;`) while the device is being set up. Defining them once, statically, would be cleaner. I mentioned this as optional in `suggested_fix`.
+✔ Report written to results/s236.json

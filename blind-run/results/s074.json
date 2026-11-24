@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "dent = prof_dir(p);",
+      "reason": "The parent profile's directory dentry may be NULL (e.g. the parent's fs entries were never created or were already removed). This value is not checked."
+    },
+    {
+      "statement": "dent = aafs_create_dir(\"profiles\", dent);",
+      "reason": "The possibly-NULL parent dentry is passed straight to aafs_create_dir. The child directory then gets created under the wrong place (the securityfs root) or the parent inode is dereferenced as NULL. The result is stored in prof_child_dir(p), which can lead to a NULL pointer dereference or inconsistent dentry state later."
+    }
+  ],
+  "suggested_fix": "After dent = prof_dir(p), check whether dent is NULL. If it is, set error = -ENOENT and goto fail2 instead of calling aafs_create_dir with a NULL parent. More generally, check that every parent dentry is valid before creating child entries under it."
+}

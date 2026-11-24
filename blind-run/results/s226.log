@@ -1,0 +1,9 @@
+▶ Scanning: samples/s226.c
+▶ Report:   results/s226.json
+I found a vulnerability and wrote the answer to `results/s226.json`. It's a NULL pointer dereference (CWE-476).
+
+- **What goes wrong:** `get_cap_buffer()` can return NULL when no capture buffer is available. The function itself expects this, since lines 25–26 check `fb ?` before reading its addresses. But line 23 still computes `dst_buf_info` from `fb` with `container_of`, without checking. Then `v4l2_m2m_buf_copy_metadata()` on lines 36–37 writes the buffer's metadata through that invalid, near-NULL pointer, which crashes the kernel.
+- **Suggested fix:** Check `fb` right after `get_cap_buffer()` and return an error if it is NULL. Do this before calling `container_of` or copying the metadata.
+
+`dec_params` (line 6) is also used without a NULL check. That would only be a bug if the lookup can fail, which isn't visible from this file, so I left it out of the answer.
+✔ Report written to results/s226.json

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s076.c
+▶ Report:   results/s076.json
+I found no vulnerability in `bytcht_da7213_probe` and wrote that verdict to `results/s076.json`: not vulnerable, with no CWE and no flagged statements.
+
+The parts I checked:
+- **ACPI device reference:** `acpi_dev_put(adev)` is called whether or not a matching device was found, so the reference is always released. The call is also safe when `adev` is NULL, so there's no null dereference.
+- **Codec name:** `snprintf(codec_name, sizeof(codec_name), ...)` is limited to the buffer size, so it can't overflow.
+- **Array index:** `dai_index` either starts at 0 or is set inside the loop that runs up to `ARRAY_SIZE(dailink)`, so it always points inside the `dailink` array.
+- **Error handling:** errors from `snd_soc_fixup_dai_links_platform_name()` and `devm_snd_soc_register_card()` are passed back to the caller.
+
+The code looks like the patched version of this driver: older versions are known to have released the ACPI reference in an unsafe way.
+✔ Report written to results/s076.json

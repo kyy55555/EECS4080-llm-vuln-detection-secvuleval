@@ -1,0 +1,12 @@
+▶ Scanning: samples/s173.c
+▶ Report:   results/s173.json
+I found no vulnerability in `f2fs_defragment_range` (the f2fs file defragment function), and I wrote that verdict to `results/s173.json`. `is_vulnerable` is false, `cwe` is null and `vulnerable_statements` is empty. It's a judgment from reading this one file; I didn't compile or run anything.
+
+Why it looks safe:
+- **Range limits:** The start and end pages are calculated while the inode is locked, and the end is capped at the file's size.
+- **Unsupported files:** It refuses files whose compressed blocks have been released, atomic-write files, and files that are updated in place (pinned files fall in that last group).
+- **Page handling:** It waits for pending writes to finish before marking pages for relocation, and handles at most one segment's worth of blocks per pass.
+- **Cleanup:** Every exit path clears the two temporary flags it sets and unlocks the inode.
+
+The one thing this file can't confirm is whether `range->start + range->len` can overflow. In the kernel, that check would be done by the ioctl code that calls this function, which isn't in the sample. If that check were missing, this would be a real problem.
+✔ Report written to results/s173.json

@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "sysfs_remove_link(mk->drivers_dir, driver_name);",
+      "reason": "The single 'out' error label is reached from every failure path, including when make_driver_name() returned NULL (-ENOMEM) and when mk->drivers_dir is NULL. Calling sysfs_remove_link() with a NULL name passes NULL down to kernfs_remove_by_name()/kernfs_find_ns(), which dereferences it in strcmp/hash, causing a NULL pointer dereference (kernel oops). With a NULL drivers_dir the call also operates on the sysfs root instead of the intended directory, and it tries to remove a link that was never created."
+    }
+  ],
+  "suggested_fix": "Use staged error labels so each path only undoes what was actually done: if make_driver_name() fails, only remove the 'module' link; if drivers_dir is NULL, free driver_name and remove the 'module' link; only call sysfs_remove_link(mk->drivers_dir, driver_name) when both are valid (or drop it entirely since the link creation failed). E.g. labels out_free_driver_name (kfree) and out_remove_kobj (sysfs_remove_link(&drv->p->kobj, \"module\")), never passing a NULL name or directory to sysfs_remove_link."
+}

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "const struct ieee80211_he_cap_elem *ve = &vc->he_cap_elem;",
+      "reason": "mt76_connac_get_he_phy_cap() can return NULL, for example when the band or interface type has no HE capability data. The return value is never checked, so vc can be NULL here."
+    },
+    {
+      "statement": "snd_dim = HE_PHY(CAP5_BEAMFORMEE_NUM_SND_DIM_UNDER_80MHZ_MASK,\n\t\t\t ve->phy_cap_info[5]);",
+      "reason": "This reads ve->phy_cap_info[5]. ve comes from a vc pointer that may be NULL, so the read dereferences a NULL-based pointer and crashes the kernel (denial of service)."
+    }
+  ],
+  "suggested_fix": "Check the return value of mt76_connac_get_he_phy_cap() before using it. If vc is NULL, return early (do not set up HE beamformer fields) and only then compute ve = &vc->he_cap_elem. This is the same NULL check the driver's other uses of this helper need."
+}

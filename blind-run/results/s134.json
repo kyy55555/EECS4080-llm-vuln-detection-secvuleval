@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-911",
+  "vulnerable_statements": [
+    {
+      "statement": "return nfserr_resource;",
+      "reason": "After idmap_lookup() succeeds, item holds a reference on the idtoname cache entry. If xdr_reserve_space() fails, the function returns nfserr_resource without calling cache_put(&item->h, nn->idtoname_cache), leaking the cache entry reference. A client that keeps triggering this path (e.g. by making the reply buffer run out of space) can pin cache entries indefinitely and exhaust kernel memory."
+    }
+  ],
+  "suggested_fix": "Release the cache reference on every exit after a successful lookup. For example, on xdr_reserve_space() failure, call cache_put(&item->h, nn->idtoname_cache) before returning nfserr_resource. Alternatively, set a status variable and use a single exit path that always calls cache_put()."
+}

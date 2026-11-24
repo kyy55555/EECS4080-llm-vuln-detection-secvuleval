@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "dst_buf_info = container_of(fb, struct mtk_video_dec_buf, frame_buffer);",
+      "reason": "get_cap_buffer() can return NULL when there is no capture buffer available; the code itself acknowledges this (fb ? ... : 0), yet unconditionally computes dst_buf_info from fb via container_of, producing an invalid pointer derived from NULL."
+    },
+    {
+      "statement": "v4l2_m2m_buf_copy_metadata(&src_buf_info->m2m_buf.vb,\n\t\t\t\t   &dst_buf_info->m2m_buf.vb, true);",
+      "reason": "When fb is NULL, dst_buf_info is a bogus pointer near NULL, and v4l2_m2m_buf_copy_metadata writes timestamp/flags/timecode into it, causing a NULL (near-NULL) pointer dereference and kernel crash."
+    }
+  ],
+  "suggested_fix": "Check the result of get_cap_buffer() before using it: if fb is NULL, log an error and return an error (e.g. -ENOMEM/-EBUSY) before computing dst_buf_info with container_of or calling v4l2_m2m_buf_copy_metadata. Only derive dst_buf_info and copy metadata when a valid capture buffer exists."
+}

@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "reg_table->mc_reg_table_entry[num_ranges].mc_data[i] =\n\t\t\t\t\t\t\t\t\treg_table->mc_reg_table_entry[num_ranges].mc_data[i - 1];",
+      "reason": "If the first register index entry (i == 0) from the VBIOS table has pre_reg_data marked DATA_EQU_PREV, the code reads mc_data[i - 1]. Because i is an unsigned u32, i - 1 wraps to 0xFFFFFFFF, so the read lands far outside the mc_data array. Nothing checks that i > 0 before using the previous entry."
+    }
+  ],
+  "suggested_fix": "Only use the previous entry when one exists: check i > 0 before reading mc_data[i - 1]. When i == 0, either skip the entry or return -EINVAL. It would also help to validate the VBIOS-supplied offsets and sizes (usMemClkPatchTblOffset, usRegIndexTblSize, usRegDataBlkSize) against the table size returned by amdgpu_atom_parse_data_header."
+}

@@ -1,0 +1,11 @@
+▶ Scanning: samples/s115.c
+▶ Report:   results/s115.json
+The function is vulnerable: it can crash the kernel by following a NULL pointer (CWE-476). I wrote the answer to `results/s115.json`.
+
+**The vulnerable line:** `samples/s115.c:3`, `struct hv_device *hv_dev = channel->primary_channel->device_obj;`
+
+- **Why it crashes:** this function runs when the host withdraws ("rescinds") a device on the main channel. On a main channel, `primary_channel` is always NULL, because it is only set on sub-channels. Reading `->device_obj` through it therefore follows a NULL pointer. The kernel crashes as soon as the host removes the device, which makes this a denial of service.
+- **Suggested fix:** get the device directly from the channel being withdrawn, using `channel->device_obj`. If sub-channels could ever reach this function, choose between `primary_channel` and `channel` depending on whether `primary_channel` is set. Also check that `hv_dev` and `pdata` are not NULL before using them.
+
+My conclusion that `primary_channel` is always NULL on main channels comes from what I know of the Hyper-V bus code, not from this file. The sample alone doesn't show which channels this function is called for. I also recognised this code as matching an upstream Linux bug that was later fixed by switching to `channel->device_obj`.
+✔ Report written to results/s115.json

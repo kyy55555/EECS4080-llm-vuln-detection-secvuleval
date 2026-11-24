@@ -1,0 +1,15 @@
+▶ Scanning: samples/s148.c
+▶ Report:   results/s148.json
+I judged `qcom_battmgr_probe` in `samples/s148.c` vulnerable to a NULL pointer dereference (CWE-476) caused by a race during probe. The answer is in `results/s148.json`. I worked only from the code in the file and didn't run anything.
+
+**The problem:** `battmgr->client` is only filled in by the last statement (line 71), after things that can already use it have gone live:
+- **The glink client itself:** `devm_pmic_glink_register_client` activates the client before returning. Its callbacks, `qcom_battmgr_pdr_notify` and `qcom_battmgr_callback`, can fire straight away and schedule `enable_work`. That worker sends a request through `battmgr->client` before the field has been assigned, so it uses NULL.
+- **The power supplies:** they are registered earlier (lines 35–65), so the rest of the kernel and userspace can already read their properties. Each read sends a request through the same `battmgr->client`, which is still NULL at that point.
+
+**Suggested fix:** split creating the client from turning it on:
+1. Allocate the glink client first and store it in `battmgr->client`.
+2. Register the power supplies.
+3. Only then call `pmic_glink_client_register()` to enable callbacks and notifications.
+
+`battmgr->client` is then always valid before any callback, worker or property read can use it.
+✔ Report written to results/s148.json

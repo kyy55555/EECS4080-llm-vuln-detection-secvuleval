@@ -1,0 +1,10 @@
+▶ Scanning: samples/s117.c
+▶ Report:   results/s117.json
+I found no vulnerability in `__genradix_ptr_alloc` in `samples/s117.c` and wrote that verdict to `results/s117.json` (`is_vulnerable: false`, no CWE, no flagged statements).
+
+- **Growing the tree:** when another thread changes the root first and `cmpxchg_release` fails, line 32 clears `new_node->children[0]`. This is the fix for the known rare race in this function. Without it, the spare node could keep a pointer to a live subtree and later be reused or freed with it still attached.
+- **Walking down the tree:** a missing child is added with `cmpxchg_release(p, NULL, new_node)` and then `swap()`. If two threads race, only one node goes into the slot, and the loser keeps its spare. Any unused spare is freed at line 55, so nothing leaks and nothing is freed twice.
+- **Bounds:** at each level, `offset` is masked to that level's size, so the child index and the final `&n->data[offset]` stay inside the node.
+
+I judged this from the code alone. One thing I could not check is how the helper functions behave, such as `genradix_depth_shift` and `genradix_alloc_node`, because they are defined outside this file.
+✔ Report written to results/s117.json

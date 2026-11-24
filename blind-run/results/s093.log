@@ -1,0 +1,10 @@
+▶ Scanning: samples/s093.c
+▶ Report:   results/s093.json
+I found no vulnerability in `samples/s093.c` and wrote that verdict to `results/s093.json`.
+
+`dasd_3990_erp_file_prot` is a very short error-recovery handler. It does two things:
+- It logs a hardware error message for the device the request was sent to.
+- It hands the request to `dasd_3990_erp_cleanup` and marks it as failed (`DASD_CQR_FAILED`).
+
+Nothing in it handles buffers, does arithmetic, takes outside input or manages memory. The only risk would be the pointers it follows (`erp->startdev->cdev`) being null. I'm assuming they are always valid at this point, as in the usual pattern for these handlers. That can't be confirmed from this one file. So the JSON has `"is_vulnerable": false`, `cwe` null, and an empty `vulnerable_statements` list.
+✔ Report written to results/s093.json

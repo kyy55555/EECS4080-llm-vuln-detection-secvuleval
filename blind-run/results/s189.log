@@ -1,0 +1,11 @@
+▶ Scanning: samples/s189.c
+▶ Report:   results/s189.json
+I marked this function as vulnerable to a use-after-free (CWE-416) and wrote the answer to `results/s189.json`.
+
+**The vulnerable line:** `rtw_usb_rx_resubmit(rtwusb, rxcb);` (line 19). `rtw_usb_init_rx` submits all the receive buffers (URBs) to the USB core while the device is still being set up. Nothing in this file shows the probe error path, so that part rests on what I recall of this driver: if a later setup step fails, the error path frees the driver memory (`rtwdev`/`rtwusb`) and the workqueue but doesn't cancel those submitted URBs. When they complete later, their handlers and the queued `rx_work` run on freed memory.
+
+**Suggested fix:**
+1. Split the function in two. `rtw_usb_init_rx` should only allocate the workqueue, the skb queue and the work item.
+2. A new `rtw_usb_setup_rx` should submit the URBs, and probe should call it only after setup has fully succeeded.
+3. On every failure and disconnect path, call `usb_kill_urb` on the URBs, then cancel or flush `rx_work`, then destroy the workqueue, all before any memory is freed.
+✔ Report written to results/s189.json

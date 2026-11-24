@@ -1,0 +1,9 @@
+▶ Scanning: samples/s027.c
+▶ Report:   results/s027.json
+I wrote the answer to `results/s027.json`: the function is vulnerable, a NULL pointer dereference (CWE-476).
+
+- **Main problem:** The first loop checks `otg_master` for NULL before using it. The second loop, which handles the "phantom" (shadow) pipes, does not. In that loop, `resource_get_otg_master_for_stream()` can return NULL, and that value goes straight into `resource_log_pipe_for_stream()` (`samples/s027.c:31`), which then dereferences it.
+- **Second problem:** `phantom_stream_idx` comes from `resource_stream_to_stream_idx()` and is used to index `state->streams[...]` without any check (`samples/s027.c:30`). If the paired phantom stream isn't found, that index could be -1 and the read would go out of bounds. This depends on how that helper behaves, and its code isn't in this file, so I couldn't confirm it.
+
+**Suggested fix (also in the JSON):** in the phantom loop, skip the stream if the index is invalid, and add an `if (!otg_master) continue;` check like the one in the first loop.
+✔ Report written to results/s027.json

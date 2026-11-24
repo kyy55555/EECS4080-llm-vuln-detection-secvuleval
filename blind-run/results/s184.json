@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The function already switches the ring to large (3K) RX buffers both when max_frame_size exceeds IGB_MAX_FRAME_BUILD_SKB and when Store Bad Packet (E1000_RCTL_SBP) is enabled. With SBP on, the hardware may DMA oversized frames, so this check stops them from overflowing a 2K buffer. Keep the SBP check whenever this code is refactored."
+}

@@ -1,0 +1,17 @@
+▶ Scanning: samples/s030.c
+▶ Report:   results/s030.json
+I marked this function as vulnerable and wrote the result to `results/s030.json`. The bug is a possible divide by zero (CWE-369).
+
+**The problem:** in `samples/s030.c:28`, the code works out the frame rate like this:
+```c
+unsigned int frame_rate = timing->pix_clk_100hz / (timing->h_total * timing->v_total);
+```
+Nothing checks that the divisor is nonzero. If `h_total` or `v_total` is 0, the kernel crashes. That could happen with bad timing values or while a stream is being torn down. The multiplication can also overflow a 32-bit integer and wrap around to 0.
+
+**Suggested fix:**
+- Skip the frame-rate calculation unless both `h_total` and `v_total` are nonzero.
+- Do the multiplication in a 64-bit type (for example with `div_u64`) so it can't wrap.
+- Check that `pipe_ctx[i]->stream` is not NULL before reading its fields.
+
+**Also noticed, but not counted as a vulnerability:** `num_frames = 2 * (frame_rate % 60)` looks like a logic bug. At exactly 120 or 180 Hz it gives `num_frames = 0`. That is wrong behaviour rather than a security issue, so I left it out of the vulnerable statements.
+✔ Report written to results/s030.json

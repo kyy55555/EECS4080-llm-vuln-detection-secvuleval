@@ -1,0 +1,8 @@
+▶ Scanning: samples/s077.c
+▶ Report:   results/s077.json
+The function is vulnerable: it leaks memory (CWE-401). I wrote the result to `results/s077.json`.
+
+**The bug:** at `samples/s077.c:14`, `specs` (about 4 KB) is allocated with `kcalloc`. If `btf_type_by_id()` then fails because the relocation's type ID is bad, the function returns `-EINVAL` at line 22 without freeing `specs`. Someone loading BPF programs can supply CO-RE relocations with bad type IDs over and over, leaking kernel memory each time.
+
+**Suggested fix:** free `specs` before returning on that path. Either add a cleanup label that only frees `specs`, or look up the type before allocating `specs`. Don't just jump to the existing `out` label: it unlocks `cand_cache_mutex`, which isn't held yet at that point.
+✔ Report written to results/s077.json

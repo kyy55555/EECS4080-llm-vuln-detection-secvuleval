@@ -1,0 +1,10 @@
+▶ Scanning: samples/s012.c
+▶ Report:   results/s012.json
+I've written the result to `results/s012.json`: the function is vulnerable, a race condition (CWE-362) that can lead to a use-after-free.
+
+**The bug:** `evict_inodes()` checks whether an inode is still in use (`atomic_read(&inode->i_count)`, `samples/s012.c:9`) before it takes the inode's lock, `inode->i_lock`. In that gap, another thread can grab a new reference to the inode. Taking a reference also happens under `i_lock`, which is why only a check made while holding the lock can be trusted. The function then locks the inode, checks only its state flags, and marks it for freeing (`I_FREEING`, `samples/s012.c:18`) without checking the use count again. `dispose_list()` then evicts and frees an inode that another thread is still using.
+
+**Fix:** after `spin_lock(&inode->i_lock)`, check `i_count` again and skip the inode if it is non-zero. The unlocked check can stay as a quick early filter, but the decision to free has to rest on the check made under the lock.
+
+I based this only on the sample file, as instructed, and didn't compile or run anything.
+✔ Report written to results/s012.json

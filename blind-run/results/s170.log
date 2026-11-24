@@ -1,0 +1,9 @@
+▶ Scanning: samples/s170.c
+▶ Report:   results/s170.json
+My verdict is that `efc_nport_vport_del` in `samples/s170.c` has no vulnerability, and I've written that to `results/s170.json` with no CWE and an empty statement list.
+
+- **vport loop (lines 12–18):** it uses the "safe" version of the list walk while holding `vport_lock`. It unlinks and frees the matching entry, then stops right away, so the freed memory is never touched again.
+- **nport loop (lines 27–34):** this is where you'd expect a problem, because `kref_put()` may free the `nport`. But the loop stops immediately after that call. Nothing reads the `nport` afterwards: there's no list removal and the loop doesn't move to the next entry, so there's no use-after-free.
+
+As I recall, an earlier version of this kernel function did have a use-after-free: it removed the `nport` from the list after `kref_put()` had already freed it. The code in this sample looks like the corrected version. I didn't check that against any other source, since the task limited me to this one file.
+✔ Report written to results/s170.json

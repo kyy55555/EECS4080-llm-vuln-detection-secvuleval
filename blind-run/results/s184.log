@@ -1,0 +1,8 @@
+▶ Scanning: samples/s184.c
+▶ Report:   results/s184.json
+I judged this function **not vulnerable** and wrote that to `results/s184.json`.
+
+**Why:** `igb_set_rx_buffer_len` turns on large receive buffers in two cases: when `max_frame_size` is bigger than `IGB_MAX_FRAME_BUILD_SKB`, and when the Store Bad Packet bit (`E1000_RCTL_SBP`) is set. That second case is the one that matters. With Store Bad Packet on, the network card can accept oversized frames and write them into memory. If the driver had kept 2K buffers, those frames could overflow them, which would be a heap overflow (CWE-787). Because this check is already here, this looks like the fixed version of the function. In the file, `vulnerable_statements` is empty and `cwe` is null.
+
+**Note:** The sample looks hand-edited. The two `#if (PAGE_SIZE < 8192)` lines are commented out, but their matching `#endif` lines are still there. As written, this code wouldn't compile. That's a problem with how the sample was prepared, not a security flaw, so I didn't count it toward the verdict.
+✔ Report written to results/s184.json

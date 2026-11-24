@@ -1,0 +1,17 @@
+▶ Scanning: samples/s086.c
+▶ Report:   results/s086.json
+I judged the function vulnerable, as a use-after-free (CWE-416), and wrote the answer to `results/s086.json`. This comes from reading the code only; I didn't build or run anything.
+
+**The problem:** `xe_exec_queue_create_ioctl` puts the new exec queue into the per-file lookup table (`xa_alloc`, line 126) before it has finished setting the queue up. Once that entry exists, userspace can reach the queue by its ID, and the lock is released at line 127. A second thread could guess the ID and call the destroy ioctl, which would free the queue. The original thread then runs `q->xef = xe_file_get(xef);` (line 132) and writes into freed memory. If that happens, the file reference taken there is also never released.
+
+**Suggested fix:** finish setting up the queue before making it visible.
+- Set `q->xef = xe_file_get(xef)` before `xa_alloc()`.
+- If `xa_alloc()` fails, the normal queue teardown should drop that reference.
+- After the queue is in the table, don't touch `q` again unless you hold your own reference to it.
+
+**Other suspect spots, not listed in the answer:**
+- **`vm` used after release (lines 112–119):** `vm` is used after `xe_vm_put(vm)`. This is probably safe, assuming the queue keeps its own reference to `vm`, but this file alone doesn't show that.
+- **Compute-queue registration outside the lock:** the compute-queue registration (line 119) runs after the VM lock is released, so it could race with the VM being closed.
+
+I listed only the publish-before-initialize race because it is the clearest bug.
+✔ Report written to results/s086.json

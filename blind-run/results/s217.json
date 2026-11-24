@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "list_add_tail(&buf->node, &fl->mmaps);",
+      "reason": "The buffer is put on the shared fl->mmaps list (where other threads can see it) before the last step that can fail, copy_to_user. Once it is on the list, a concurrent FASTRPC_IOCTL_MUNMAP or file release can find and free it while this function still uses it."
+    },
+    {
+      "statement": "if (copy_to_user((void __user *)argp, &req, sizeof(req))) {",
+      "reason": "If copying back to the user fails, the code jumps to err_assign, which unmaps and frees buf without first removing it from fl->mmaps. That leaves a dangling list entry, so a later munmap or cleanup touches freed memory (use-after-free or double free). If another thread already freed buf through the list, this error path frees it a second time."
+    },
+    {
+      "statement": "fastrpc_buf_free(buf);",
+      "reason": "On the copy_to_user error path, this frees a buffer that is still linked into fl->mmaps, or that another thread may already have freed."
+    }
+  ],
+  "suggested_fix": "Add the buffer to fl->mmaps only after everything that can fail has succeeded. Move the copy_to_user call before the spin_lock/list_add_tail block. If copy_to_user fails, clean up with munmap_impl plus free while the buffer is still private to this function. Alternatively, on the error path, remove the buffer from the list with list_del under fl->lock before freeing it."
+}

@@ -1,0 +1,8 @@
+▶ Scanning: samples/s145.c
+▶ Report:   results/s145.json
+I wrote the verdict to `results/s145.json`: the function is vulnerable, a use-after-free (CWE-416).
+
+- **The bug:** at `samples/s145.c:5`, `pad` is set to point into the `card->dai_link` array. Then `meson_card_reallocate_links()` at line 11 grows that array. Going by the name and how the result is used, this works like `krealloc`: it moves the array and frees the old copy. I couldn't confirm that from this file alone, because the helper is defined elsewhere. If it does free the old copy, `pad` then points to freed memory.
+- **Where the freed memory is read:** `pad->name` at line 17 and `pad->cpus->of_node` at line 31. The second read also feeds a possibly bogus `of_node` into `of_node_get()` at line 45.
+- **The fix:** set `pad` only after the reallocation succeeds, next to where `lb` is set at line 15.
+✔ Report written to results/s145.json

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s140.c
+▶ Report:   results/s140.json
+I found no vulnerability in `ether3_remove` and wrote that result to `results/s140.json`.
+
+The risk in this kind of remove function is a use-after-free: a pending timer firing after its device's memory has been freed. The order of operations here prevents that:
+
+1. `unregister_netdev(dev)` shuts the device down, so no new packet sends can restart the timer.
+2. `del_timer_sync(&priv(dev)->timer)` cancels any timer still pending and waits for a running timer handler to finish.
+3. Only after that does `free_netdev(dev)` free the memory.
+
+This ordering matches what I recall of the upstream kernel fix for a use-after-free in this function, which added the `del_timer_sync` call. If that's right, this sample is the fixed version, but I didn't check it against any other source.
+✔ Report written to results/s140.json

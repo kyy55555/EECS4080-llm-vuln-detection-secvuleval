@@ -1,0 +1,11 @@
+▶ Scanning: samples/s194.c
+▶ Report:   results/s194.json
+I found no vulnerability in `bpf_core_apply` (`samples/s194.c`). I wrote the result to `results/s194.json` with `is_vulnerable: false`, `cwe: null` and an empty `vulnerable_statements` list.
+
+- **Memory allocation:** `specs` is checked for NULL before the mutex is taken, so the early return can't leave the lock held.
+- **Empty candidate list:** the candidate array is only allocated when `cc->cnt` is non-zero (line 29). With zero candidates, `kcalloc` would return a special non-NULL zero-size pointer, which the `!cands.cands` check would not catch; the guard prevents that. The real allocation is checked for NULL.
+- **Locking:** `cand_cache_mutex` stays held from the candidate cache lookup until `bpf_core_calc_relo_insn` and `bpf_core_patch_insn` finish. This means a kernel module can't be unloaded, freeing its type data, while that data is still being used.
+- **Error paths:** every error after the lock is taken jumps to `out`, which frees both allocations and unlocks once.
+
+I relied on two things this file can't show. First, I assumed `ctx->log` is never NULL, because I recall the verifier passing a valid log pointer. Second, I assumed the caller has already checked `relo->insn_off`, which is used as an instruction index.
+✔ Report written to results/s194.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. This is a kselftest regression test (close_range_bitmap_corruption) that runs in user space. It checks that close_range() with CLOSE_RANGE_UNSHARE correctly shrinks the descriptor table and its secondary 'fully used' bitmap. The test only calls system calls and checks their results; it does not contain the kernel bug itself. The trailing 'exit(EXIT_FAILURE);' after EXPECT_EQ is valid: kselftest harness macros accept an optional statement that runs when the check fails."
+}

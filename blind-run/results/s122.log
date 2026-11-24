@@ -1,0 +1,10 @@
+▶ Scanning: samples/s122.c
+▶ Report:   results/s122.json
+I judged the function vulnerable (CWE-457, use of an uninitialized variable) and wrote the answer to `results/s122.json`.
+
+**The bug:** `addr_len` is declared without a starting value, and `of_get_property()` only fills it in when the node has a `reg` property. Lines 19–20 compare and clamp `addr_len` before line 21 checks whether `addr` is NULL. On a node with no `reg` property, the code therefore reads an uninitialized stack variable, which is undefined behaviour in C. The `memcpy` itself is safe because it only runs when `addr` is non-NULL, so the practical impact is low.
+
+**Suggested fix:** move the length clamp inside the `if (addr)` block (or set `addr_len` to 0 when it's declared), so it is only used after `of_get_property()` has set it.
+
+**A second issue I put in the fix text but did not list as a vulnerable statement:** `intsize` comes from the parent node's `#interrupt-cells` property and is never checked against the size of `out_irq->args`. A malformed device tree could make the loop on lines 46–52 write past the end of that array. Because the device tree is normally trusted input, I recommended checking it as hardening only.
+✔ Report written to results/s122.json

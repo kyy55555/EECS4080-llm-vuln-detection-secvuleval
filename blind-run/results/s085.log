@@ -1,0 +1,12 @@
+▶ Scanning: samples/s085.c
+▶ Report:   results/s085.json
+I found no vulnerability in `smb2_set_path_size` and wrote that verdict to `results/s085.json`: `is_vulnerable` is false, `cwe` is null, and there are no vulnerable statements.
+
+The main risk in this function is the handling of `cfile` on the retry path, and that is done correctly:
+
+- **Where it could go wrong:** `smb2_compound_op()` releases the reference to `cfile` that it is given. If the `-EINVAL` retry reused that same `cfile`, the code would release it twice or use it after it was freed.
+- **Why it doesn't:** before retrying, the function calls `cifs_get_writable_path()` again (`samples/s085.c:25`). That gives the retry its own new reference, or NULL if no writable handle is found.
+- **The retry itself:** it passes a NULL `dentry`, so the second request goes out without the lease key, which is the point of the retry.
+
+One caveat: two parts of this rely on how the other functions behave, which I couldn't check from this file alone. I assumed `smb2_compound_op()` releases the reference it is given, and that `cifs_get_writable_path()` sets `cfile` to NULL when it finds no handle.
+✔ Report written to results/s085.json

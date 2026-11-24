@@ -1,0 +1,11 @@
+▶ Scanning: samples/s212.c
+▶ Report:   results/s212.json
+I judged `evict_inodes` in `samples/s212.c` not vulnerable and wrote that to `results/s212.json`, with `cwe` set to null and no vulnerable statements listed.
+
+- **Reference count checked again under the lock:** the first `i_count` check (line 9) takes no lock, but it is repeated under `inode->i_lock` (line 13) before the inode is marked for freeing. This closes the race where a concurrent `find_inode()` or `iput()` takes a reference in the gap and the inode is then freed while still in use, which would be a use-after-free. An older version of this function, which I recall had only the unlocked check, had that race. The recheck is the fix, so this sample looks like the patched version.
+- **Inodes already being set up or freed are skipped:** any inode marked `I_NEW`, `I_FREEING` or `I_WILL_FREE` is left alone, so none is torn down twice.
+- **Inode marked and taken off the LRU under its lock:** the inode is flagged `I_FREEING` and removed from the LRU list while `i_lock` is held, and only then moved onto the private `dispose` list.
+- **Locks released before sleeping:** when the loop yields to the scheduler, it releases `s_inode_list_lock` first, frees the inodes collected so far, and restarts the walk from the top. It never sleeps holding a spinlock and never resumes from a pointer that may now be stale.
+
+This verdict comes only from the file itself. The task ruled out checking the kernel history, so it isn't confirmed against the actual patch.
+✔ Report written to results/s212.json

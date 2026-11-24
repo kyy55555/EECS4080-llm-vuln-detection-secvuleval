@@ -1,0 +1,12 @@
+▶ Scanning: samples/s210.c
+▶ Report:   results/s210.json
+I found no vulnerability in `amdtp_hid_remove` and wrote that verdict to `results/s210.json`.
+
+The function does the teardown steps in a safe order:
+1. It saves `driver_data` into `hid_data`.
+2. It calls `hid_destroy_device()`, so nothing can call back into the driver and use that data any more.
+3. Only then does it `kfree(hid_data)`.
+4. It sets the slot to `NULL`, so the same entry can't be freed twice.
+
+If the order were reversed, so that `driver_data` was freed before `hid_destroy_device()`, it would be a use-after-free (CWE-416). From memory, I think an earlier version of this kernel driver had that order and it was later fixed. I haven't checked that, since I only worked from this file.
+✔ Report written to results/s210.json

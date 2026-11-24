@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function skips dummy DAI links before dereferencing codecs->name, uses adev (acpi_dev_name) before calling acpi_dev_put(), takes a reference with get_device() on codec_dev and releases it on every error path (err/err_device), and bounds all string formatting with snprintf. For extra hardening, the mic_name[] lookup could be bounds-checked against ARRAY_SIZE(mic_name), because the quirk_override module parameter (root-only) can set map values above 3."
+}

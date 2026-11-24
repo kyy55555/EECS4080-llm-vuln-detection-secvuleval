@@ -1,0 +1,10 @@
+▶ Scanning: samples/s106.c
+▶ Report:   results/s106.json
+I judged this function **not vulnerable** and wrote that verdict to `results/s106.json`.
+
+- **No null-pointer dereference:** The pointers `ras` and `obj` are both checked before use (`if (ras && !ras->disable_ras_err_cnt_harvest && obj)`).
+- **No memory leak:** If `amdgpu_ras_error_data_init()` fails, the function returns before using anything. If it succeeds, every path after that reaches `amdgpu_ras_error_data_fini()`, so the error data is always freed.
+- **Remaining small risk:** `get_ras_block_str(adev->nbio.ras_if)` would break if `ras_if` were NULL while `obj` was not. I didn't count this as a vulnerability, because this interrupt handler is normally only set up once `ras_if` exists. I couldn't confirm that from this one file.
+
+The function looks like the already-fixed version of this code, since it has the guards that the known bugs here lacked.
+✔ Report written to results/s106.json

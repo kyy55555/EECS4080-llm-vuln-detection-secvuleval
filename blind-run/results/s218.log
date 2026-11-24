@@ -1,0 +1,16 @@
+▶ Scanning: samples/s218.c
+▶ Report:   results/s218.json
+I judged `lpfc_get_sfp_info_wait` in `samples/s218.c` to be **vulnerable**, as a use-after-free / double free (CWE-416), and wrote the result to `results/s218.json`.
+
+**The problem:** the function sends two mailbox commands and waits for each, but neither call handles a timeout (`MBX_TIMEOUT`).
+- **First call (line 48):** only `MBX_NOT_FINISHED` is checked.
+- **Second call (line 106):** the return value isn't checked at all.
+
+When a wait times out, the mailbox and its DMA buffer belong to a completion handler that runs later and frees them. That hand-off happens inside `lpfc_sli_issue_mbox_wait`, which isn't in this file, so this part comes from my knowledge of the lpfc driver, not from the sample.
+
+After a timeout, the function keeps going anyway:
+- **Uses memory it no longer owns:** it clears and reuses `mbox` (line 67), and on the first call it also clears and copies from `mp->virt` (lines 64 and 68).
+- **Frees it on exit:** it calls `lpfc_mbox_rsrc_cleanup` (line 118). When the completion handler later runs, it touches or frees the same memory again.
+
+**Suggested fix:** check for `MBX_TIMEOUT` after each mailbox call. On a timeout, return an error without touching or freeing `mbox` or its buffer, since the completion handler will free them. Only clean up when the command actually finished or was never sent.
+✔ Report written to results/s218.json

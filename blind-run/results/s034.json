@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-404",
+  "vulnerable_statements": [
+    {
+      "statement": "if (disable_device || irq > 0) {",
+      "reason": "MSI/MSI-X teardown and device disable are tied to the same condition. When only the IRQ is being torn down (disable_device == false), the device is still disabled. When the device is disabled, MSI is turned off without coordinating with the hotplug IRQs that child bridges allocated under this slot. In nested-bridge hot-unplug, those child IRQ resources are leaked or left dangling. Later IRQ teardown or reuse then works on freed or inconsistent MSI state, which can crash the kernel."
+    },
+    {
+      "statement": "pci_disable_device(pdev);",
+      "reason": "This is called whenever irq > 0, even when the caller asked not to disable the device. It disables a device that is still in use and breaks the enable/disable reference balance."
+    }
+  ],
+  "suggested_fix": "Split MSI teardown from device disable. Add a separate 'disable_msi' parameter: disable MSI/MSI-X only when disable_device or disable_msi is set, and call pci_disable_device() only when disable_device is true. On unplug, make sure the hotplug IRQs of child slots are freed (free_irq, then destroy_workqueue) before the parent's MSI vectors are released. That way no IRQ resources leak or outlive the MSI domain."
+}

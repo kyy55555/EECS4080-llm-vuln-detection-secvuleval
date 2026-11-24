@@ -1,0 +1,11 @@
+▶ Scanning: samples/s052.c
+▶ Report:   results/s052.json
+I judged `qcom_battmgr_probe` in `samples/s052.c` **not vulnerable** and wrote that to `results/s052.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why:
+- **Setup order is safe.** The work item, mutex and completion are all initialized before anything that could use them is registered.
+- **Every failure is handled.** Each allocation and power-supply registration is checked, and the resources are device-managed, so the kernel cleans them up automatically if probe fails.
+- **The startup race is closed.** Creating the client and registering it are separate steps, and registration (`pmic_glink_client_register`) happens only after `battmgr->client` is stored. So the callbacks can't run while the struct is half set up or the client pointer is still NULL. As far as I recall, older versions combined these into one call, which allowed exactly that race. This looks like the fixed version.
+
+One part rests on code outside this file. The power supplies are registered before the client exists, so something could query them early. I'm assuming, from memory of the driver, that the property handlers refuse to run until the firmware service reports it is up, and that only happens after the client is registered. I couldn't check that from this file alone; if that check were missing, those early queries could be a problem.
+✔ Report written to results/s052.json

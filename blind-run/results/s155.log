@@ -1,0 +1,9 @@
+▶ Scanning: samples/s155.c
+▶ Report:   results/s155.json
+I judged `act_open_rpl()` in `samples/s155.c` **not vulnerable** and wrote that to `results/s155.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+- **Cleanup happens once per path.** The retry path for "connection already exists" releases the atid, route, L2T entry and IPv6 address-table entry, then calls `c4iw_reconnect()` and returns. The failure path at `fail:` releases the same resources, then drops the endpoint reference. Neither path frees anything twice or uses it after freeing it.
+- **One weak spot I didn't count as a bug:** the result of `lookup_atid()` at line 15 is used without a NULL check. The atid comes from the network adapter's own reply, not from an untrusted user, so I treated it as trusted input. If you count a misbehaving adapter as a threat, this becomes a possible NULL pointer dereference (CWE-476). The suggested fix in the JSON adds that check as extra defence.
+
+This verdict is the least certain part of the answer. I didn't recall a specific known fix for this function, and the file gives no way to compare it with other kernel versions.
+✔ Report written to results/s155.json

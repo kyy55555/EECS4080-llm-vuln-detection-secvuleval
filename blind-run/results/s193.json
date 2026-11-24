@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "platform_device_put(pdev);",
+      "reason": "The probe function never took its own reference on pdev; it belongs to the driver core. When probe fails (missing syscfg-reg resource, reset control lookup failure, missing or unpopulated child node, drd init failure), this error path drops a reference the function does not own. That unbalances the device refcount and can free the platform device while the driver core and other code still use it, leading to a use-after-free."
+    }
+  ],
+  "suggested_fix": "Remove the platform_device_put(pdev) call and the undo_platform_dev_alloc label. On errors before any reset is deasserted, return the error directly. The probed device is owned by the driver core and must not be released by probe. A separate cleanup also helps: call of_platform_depopulate() if st_dwc3_drd_init() fails after of_platform_populate() succeeded."
+}

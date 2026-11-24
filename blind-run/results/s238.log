@@ -1,0 +1,7 @@
+▶ Scanning: samples/s238.c
+▶ Report:   results/s238.json
+I judged the function vulnerable to a NULL pointer dereference (CWE-476) and wrote the answer to `results/s238.json`.
+
+- **The bug:** at `samples/s238.c:17`, the function reads `link->link_enc->funcs->validate_output_with_stream(...)` without first checking that `link->link_enc` is set. A display link can have no encoder attached, for example when encoders are handed out dynamically (USB4 connections, or a link that hasn't been given one yet). Calling the function on such a link makes the kernel dereference a NULL pointer and crash.
+- **Suggested fix:** add a `link->link_enc &&` check to that condition, or return `DC_FAIL_ENC_VALIDATE` when there is no encoder. As extra caution, also check `stream->link` and the timing generator `tg` before using them. The function already checks `dc` and `stream` for NULL at the top.
+✔ Report written to results/s238.json

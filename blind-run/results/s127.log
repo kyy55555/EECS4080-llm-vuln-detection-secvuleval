@@ -1,0 +1,11 @@
+▶ Scanning: samples/s127.c
+▶ Report:   results/s127.json
+My verdict is that `privcmd_irqfd_assign()` in `samples/s127.c` is **not vulnerable**. I wrote this to `results/s127.json` with `is_vulnerable: false`, `cwe: null` and an empty list of vulnerable statements.
+
+- **Race with deassign is covered:** a use-after-free could happen if another thread removed and freed the new `kirqfd` while this function was still using it. Here the code takes `srcu_read_lock(&irqfds_srcu)` before `list_add_tail()` and keeps it until after `vfs_poll()` and `irqfd_inject()`. A deassign path that calls `synchronize_srcu()` before freeing therefore can't free the object too early. I couldn't confirm that last part, because the deassign function isn't in this file.
+- **Duplicate eventfds are rejected:** the check is made while holding `irqfds_lock`, and the code returns `-EBUSY` if the eventfd is already registered.
+- **Error paths clean up correctly:** each failure path releases what was acquired, in reverse order: `eventfd_ctx_put()`, then `fdput()`, then `kfree()`. Nothing leaks and nothing is freed twice.
+- **The size from userspace looks safe:** `irqfd->size` sets both the `kzalloc` size and the `copy_from_user` length, so the buffer always matches the copy. A very large value just makes the allocation fail. I'm assuming `size` is a 32-bit field, as I believe it is in this interface, but its type isn't defined in this file. If it is, `sizeof(*kirqfd) + size` can't overflow on 64-bit kernels.
+
+My view that this is the already-fixed version of the code is based on recognising the pattern. The reasoning above rests only on this one function, as instructed.
+✔ Report written to results/s127.json

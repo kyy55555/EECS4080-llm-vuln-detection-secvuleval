@@ -1,0 +1,12 @@
+▶ Scanning: samples/s119.c
+▶ Report:   results/s119.json
+My verdict is that `f2fs_handle_critical_error` in `samples/s119.c` is **not vulnerable**, and I've written that to `results/s119.json` with `cwe: null` and an empty list of vulnerable statements.
+
+I looked for problems in how the function handles errors and shutdown, and found three safeguards already in place:
+
+- **Shutdown doesn't make the filesystem read-only.** The check on line 39 includes `|| shutdown`, so a shutdown never sets the read-only flag. Setting it during a shutdown would skip the step that unfreezes the filesystem, and the system could hang.
+- **No forced panic during reboot or after shutdown.** The panic on lines 25–28 is skipped if the system is going down or the filesystem is already shut down. Without this, a `reboot -f` could panic because the underlying device is already disabled.
+- **Flag updates happen in a safe order.** The `smp_wmb()` call on line 49 makes sure the earlier flag changes are visible before the filesystem is marked read-only.
+
+This looks like the patched form of the function. I can't confirm that, since I worked only from this file without looking anything up.
+✔ Report written to results/s119.json

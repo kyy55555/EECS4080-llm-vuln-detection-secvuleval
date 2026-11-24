@@ -1,0 +1,8 @@
+▶ Scanning: samples/s082.c
+▶ Report:   results/s082.json
+I marked this function as vulnerable: it's a use-after-free (CWE-416). The verdict is written to `results/s082.json`.
+
+**The problem:** in `nfsd4_cb_getattr_release`, `ncf` is a structure embedded inside the delegation `dp`. The function drops its reference to the delegation first, with `nfs4_put_stid(&dp->dl_stid)` at line 9. If that was the last reference, the delegation is freed, and `ncf` goes with it. Line 10 (`clear_bit`) then writes to `ncf->ncf_cb_flags`, and line 11 (`wake_up_bit`) uses that freed field too.
+
+**Suggested fix:** call `clear_bit` and `wake_up_bit` first, and drop the reference with `nfs4_put_stid` last. That keeps the delegation alive while its fields are being used.
+✔ Report written to results/s082.json

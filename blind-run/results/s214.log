@@ -1,0 +1,11 @@
+▶ Scanning: samples/s214.c
+▶ Report:   results/s214.json
+I found no vulnerability in this function and wrote that to `results/s214.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why I judged it safe:
+- **The array index stays in range.** The TX channel is picked with `cpu % common->tx_ch_num`, the number of TX channels actually set up. So `common->tx_chns[...]` can't be read past its end, even when fewer channels are set up than the maximum. Taking the remainder by the maximum channel count instead would have that problem.
+- **Access to the shared queue is locked.** Different CPUs can map to the same TX channel. `__netif_tx_lock` and `__netif_tx_unlock` around the send loop stop them from sending on it at the same time.
+- **Unsent frames are handled.** The loop stops at the first frame that fails and returns `nxmit`, the number actually sent. The caller is responsible for the rest, so nothing is leaked or freed twice.
+
+I reviewed only this one file, as instructed. If the bug is in a helper it calls, such as `am65_cpsw_xdp_tx_frame`, this review can't see it.
+✔ Report written to results/s214.json

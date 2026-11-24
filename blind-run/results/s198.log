@@ -1,0 +1,13 @@
+▶ Scanning: samples/s198.c
+▶ Report:   results/s198.json
+I judged `amdgpu_dm_plane_helper_prepare_fb` in `samples/s198.c` **not vulnerable** and wrote that to `results/s198.json`, with `cwe` set to null and no vulnerable statements. This is moderate-confidence: I only had this one file, so I couldn't check the helper functions or the matching cleanup function.
+
+What I checked in the file:
+- **Null checks:** it returns early if there is no framebuffer or no buffer object, and it checks `dc_state` for NULL before using it.
+- **Locking:** it reserves (locks) the buffer before reserving a fence slot and pinning it.
+- **Error handling:** every failure path undoes what was done so far, unpinning first and then unlocking.
+- **GPU address:** `amdgpu_bo_gpu_offset` is only read after the buffer is pinned, so reading it after the unlock is safe.
+- **Reference count:** `amdgpu_bo_ref` takes a reference that the cleanup function (`cleanup_fb`) is expected to release. That function isn't in the file.
+
+The one assumption I couldn't confirm here is that `plane->state` is never NULL when this runs; the DRM framework normally guarantees that.
+✔ Report written to results/s198.json

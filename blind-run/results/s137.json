@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-415",
+  "vulnerable_statements": [
+    {
+      "statement": "kfree(substream->runtime);",
+      "reason": "On POST_PMD the runtime allocated in the PRE_PMU path is freed but substream->runtime is left pointing at the freed memory. The substream (w->priv) persists across power cycles, so a later event, error path, or another POST_PMD (e.g. after a failed PRE_PMU or repeated power-down) can dereference or kfree the stale pointer again, causing a use-after-free / double free."
+    }
+  ],
+  "suggested_fix": "After freeing, clear the pointer: `kfree(substream->runtime); substream->runtime = NULL;`. This makes any later kfree a no-op and lets code that checks the pointer see that the runtime is gone. Also make sure the PRE_PMU error path frees and clears the runtime the same way."
+}

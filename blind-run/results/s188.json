@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-362",
+  "vulnerable_statements": [
+    {
+      "statement": "return ice_xdp_setup_prog(vsi, xdp->prog, xdp->extack);",
+      "reason": "The XDP program setup changes vsi->xdp_prog, XDP rings and queue vectors without holding any lock that serializes against the VSI reset/rebuild path. The rebuild path rebuilds the same rings and q_vectors under a different lock, so a concurrent reset and XDP reconfiguration can race and corrupt ring state. That can cause a NULL dereference or use-after-free."
+    },
+    {
+      "statement": "return ice_xsk_pool_setup(vsi, xdp->xsk.pool,",
+      "reason": "Setting up the AF_XDP pool (stopping and restarting a queue pair and swapping the pool) has the same problem: it is not synchronized with the reset/rebuild path, so it can work on rings that are being freed or reallocated."
+    }
+  ],
+  "suggested_fix": "Add a per-VSI mutex (e.g. vsi->xdp_state_lock) and hold it around the whole XDP_SETUP_PROG and XDP_SETUP_XSK_POOL switch in ice_xdp(). Take the same mutex in the VSI rebuild/reset path, where XDP rings and q_vectors are rebuilt. Inside the lock, also check whether a reset is in progress (e.g. ice_is_reset_in_progress) and return -EBUSY if so. Move all the returns into a single unlock-and-return path."
+}

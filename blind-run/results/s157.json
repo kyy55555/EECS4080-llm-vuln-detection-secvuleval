@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-400",
+  "vulnerable_statements": [
+    {
+      "statement": "hlist_for_each_entry(child, &alias->d_children, d_sib) {",
+      "reason": "The function walks every child dentry of the directory in one pass while holding inode->i_lock and alias->d_lock, and it never stops to reschedule. A directory can collect millions of child dentries (for example, many cached lookups). Adding or removing a watch, which an unprivileged user can do with inotify/fanotify, then holds the spinlocks for a long, unbounded time. That causes soft or hard lockups and stalls other CPUs waiting on these locks, so it is a denial of service."
+    },
+    {
+      "statement": "spin_lock_nested(&child->d_lock, DENTRY_D_LOCK_NESTED);",
+      "reason": "Each child's d_lock is taken inside the unbounded loop, still under the parent's i_lock and d_lock. This adds lock contention across all CPUs and makes the long time spent in the critical section worse."
+    }
+  ],
+  "suggested_fix": "Do not update every child's flags eagerly while holding the spinlocks. Set or clear DCACHE_FSNOTIFY_PARENT_WATCHED only when the parent's watch state changes to 'watched'. When a watch is removed, mark the parent so the stale flag is cleared lazily: when a child next reports an event (__fsnotify_parent), it sees that the parent no longer watches children and clears its own flag. Another option is to bound the work, for example by dropping the locks and calling cond_resched() during the walk with a cursor, so the time spent holding a spinlock is no longer proportional to the number of children."
+}

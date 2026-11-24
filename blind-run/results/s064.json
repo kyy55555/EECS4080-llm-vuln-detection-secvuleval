@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "table->mc_reg_table_entry[num_ranges].mc_data[i] = table->mc_reg_table_entry[num_ranges].mc_data[i-1];",
+      "reason": "When the first register entry (i == 0) has uc_pre_reg_data marked DATA_EQU_PREV (the value comes from the VBIOS table), i-1 underflows. Because i is uint32_t, it wraps to 0xFFFFFFFF and the code reads out of bounds, before the start of mc_data[] or far beyond it."
+    }
+  ],
+  "suggested_fix": "Only copy the previous value when a previous entry exists. Guard the DATA_EQU_PREV branch with 'i > 0' (e.g. 'if (i) ... mc_data[i] = mc_data[i-1];'), or reject the table as invalid when entry 0 is DATA_EQU_PREV. It would also help to check that table->last does not exceed the mc_data/mc_reg_address array sizes, and that j stays within the reg data block."
+}

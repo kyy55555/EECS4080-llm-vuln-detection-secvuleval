@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "mic_name[BYT_CHT_ES8316_MAP(quirk)]);",
+      "reason": "quirk can come from the user-controlled quirk_override module parameter (or from ACPI DSM / DMI data). BYT_CHT_ES8316_MAP(quirk) pulls a multi-bit field out of quirk, and nothing checks that it is less than ARRAY_SIZE(mic_name) (2). A value of 2 or more reads past the end of the two-entry mic_name array, and the result is used as a string pointer in snprintf. This is an out-of-bounds read that can leak or dereference arbitrary kernel memory. It happens both when components_string is built and when long_name is built."
+    }
+  ],
+  "suggested_fix": "After quirk is final (after the override is applied), check BYT_CHT_ES8316_MAP(quirk) against ARRAY_SIZE(mic_name). If it is out of range, either reject the probe with -EINVAL (releasing codec_dev and the software node) or log a warning and fall back to a valid default map such as BYT_CHT_ES8316_INTMIC_IN1_MAP. Do this before mic_name is used to build the components and long_name strings."
+}

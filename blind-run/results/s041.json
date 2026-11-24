@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The global queue list is walked under nvmet_tcp_queue_mutex. If nvmet_tcp_alloc_cmds() fails, queue->nr_cmds is reset to 0, so later teardown code that walks queue->cmds for nr_cmds entries cannot touch a NULL or freed command array. Without that reset, a failed allocation would leave a non-zero nr_cmds pointing at no array (a NULL dereference or use-after-free in the release path)."
+}

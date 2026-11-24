@@ -1,0 +1,15 @@
+▶ Scanning: samples/s062.c
+▶ Report:   results/s062.json
+I've written the result to `results/s062.json`. `netem_dequeue` looks vulnerable: a **use-after-free (CWE-416)** caused by queue-length counters getting out of sync.
+
+**The problem:**
+- At `samples/s062.c:26-27`, netem takes a packet off its internal queue and immediately reduces its own packet count (`sch->q.qlen--`) and byte count (the backlog). It does this even when the packet is then passed to a child qdisc instead of being returned to the caller.
+- If the child qdisc rejects the packet, line 53 calls `qdisc_tree_reduce_backlog(sch, 1, pkt_len)` to report the drop to parent qdiscs. By then netem's count has already been reduced, so it can read 0.
+- A parent qdisc that groups traffic into classes, such as HFSC or DRR, can react to that count by deactivating or deleting a class it still holds on its active list. The class is later used after it has been freed.
+
+**Suggested fix:** don't reduce the counts when the packet comes off the internal queue. Reduce them only when the packet actually leaves netem:
+- If the child qdisc rejects it, reduce both counts and then call `qdisc_tree_reduce_backlog()`.
+- If there is no child qdisc and the packet is delivered directly, reduce `qlen` just before `goto deliver`.
+
+This pattern matches what I remember of the upstream Linux fix for CVE-2024-46800 ("sch/netem: fix use after free in netem_dequeue"). As instructed, I worked only from this file and didn't check that against any outside source.
+✔ Report written to results/s062.json

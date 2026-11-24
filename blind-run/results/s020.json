@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks for a NULL q_vector before using it, clears the back-pointers from the Tx/Rx rings and their NAPI association before freeing, deletes NAPI only when a netdev exists, frees the IRQ only when one was allocated (and not when it is still shared by another VF control VSI), and sets vsi->q_vectors[v_idx] to NULL after kfree to prevent a dangling pointer."
+}

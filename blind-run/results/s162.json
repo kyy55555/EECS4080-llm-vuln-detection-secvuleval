@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "memcpy(&data, buf + i + j, 4);",
+      "reason": "When the remaining byte count (op->data.nbytes - i) is not a multiple of 4, the loop bound is rounded up with ALIGN(..., 4), but every iteration still copies a full 4 bytes. The last memcpy therefore reads up to 3 bytes past the end of the caller's TX buffer op->data.buf.out, which is an out-of-bounds read (KASAN reports it as slab-out-of-bounds)."
+    }
+  ],
+  "suggested_fix": "Limit each copy to the bytes that remain: memcpy(&data, buf + i + j, min_t(int, 4, op->data.nbytes - i - j)). Also reset data to 0 before each copy so stale bytes are not sent. With these changes the last partial word is zero-padded and no read goes past the end of the buffer."
+}

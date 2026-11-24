@@ -1,0 +1,9 @@
+▶ Scanning: samples/s222.c
+▶ Report:   results/s222.json
+I found a vulnerability and wrote the answer to `results/s222.json`. The bug is a NULL pointer dereference (CWE-476) in `mtf_test_write`.
+
+- **The bug:** at `samples/s222.c:28`, the result of `alloc_pages()` is stored in `test->highmem` and never checked for NULL. The code does check it before running the test (`samples/s222.c:32`), but the cleanup at `samples/s222.c:42` always calls `__free_pages(test->highmem, BUFFER_ORDER)`. `__free_pages()` reads through the page pointer, so if the allocation failed, the kernel dereferences NULL and crashes.
+- **Fix:** check the result right after `alloc_pages()`. If it is NULL, return `-ENOMEM` and skip freeing the pages, or only call `__free_pages()` when `test->highmem` is non-NULL. A smaller issue: when `test->buffer` fails to allocate, the function still returns `count` as if it succeeded instead of `-ENOMEM`.
+
+In this sample, the `#ifdef CONFIG_HIGHMEM` lines are commented out but their `#else`/`#endif` lines are not, so the file wouldn't compile as written. I treated the code inside those blocks as compiled in.
+✔ Report written to results/s222.json

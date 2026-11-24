@@ -1,0 +1,9 @@
+▶ Scanning: samples/s220.c
+▶ Report:   results/s220.json
+I wrote the result to `results/s220.json`: the function is vulnerable to a NULL pointer dereference (CWE-476).
+
+- **The problem:** `pin_desc_get(pctldev, pin)` returns NULL when the pin isn't registered with the pin controller. The function reads `pdesc->mux_setting` at line 11 without checking for that, so a bad pin number crashes the kernel.
+- **Suggested fix:** right after the `pin_desc_get()` call, add `if (!pdesc) return -EINVAL;`.
+
+The rest of the function is fine: it already checks `setting`, `function` and `*func` for NULL.
+✔ Report written to results/s220.json

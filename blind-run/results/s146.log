@@ -1,0 +1,12 @@
+▶ Scanning: samples/s146.c
+▶ Report:   results/s146.json
+I marked `binder_transaction` in `samples/s146.c` as **vulnerable** (CWE-416, use-after-free) and wrote the answer to `results/s146.json`.
+
+**The bug:** before copying the user data that sits in front of each object, the code checks only that `user_offset <= object_offset` (line 439). It never checks that `object_offset` is within `tr->data_size`. Userspace controls `object_offset` through the offsets array. A large offset makes `binder_alloc_copy_user_to_buffer()` write past the data area into the offsets array, which was already copied into the buffer and is being read by this same loop.
+
+**Why it matters:** userspace can change offsets after their objects have been translated. When the transaction fails, cleanup (`binder_transaction_buffer_release`) walks those altered offsets. It can then release node or ref references that were never taken, which leads to a use-after-free.
+
+**Suggested fix:** add `object_offset > tr->data_size` to that condition, so these copies always stay inside the data area.
+
+This matches, from memory, the upstream binder fix "binder: fix UAF caused by offsets overwrite", which added exactly this check. I did not look anything up, as the task required.
+✔ Report written to results/s146.json

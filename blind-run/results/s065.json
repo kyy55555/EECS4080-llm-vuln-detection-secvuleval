@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The function copies exactly copy_words * BITS_PER_LONG bits of open_fds and close_on_exec and clears the rest up to the new table size. It also handles full_fds_bits correctly: that bitmap has one bit per word of open_fds, so it copies copy_words bits and extends to nwords bits. Using bitmap_copy_and_extend means no stale bits past the copied range are carried into the new table, which avoids the bitmap inconsistency that older byte-based memcpy/memset versions had (e.g. close_range() with CLOSE_RANGE_UNSHARE). Callers must still make sure copy_words <= fdt_words(ofdt) and copy_words <= nwords."
+}

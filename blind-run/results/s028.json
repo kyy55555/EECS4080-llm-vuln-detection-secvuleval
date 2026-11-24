@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix strictly required. The fixed-size copies (bssid ETH_ALEN, pmkid WLAN_PMKID_LEN) match the destination fields, the buffer is allocated with kzalloc and freed on all paths, and pmksa->ssid_len is bounded by the nl80211 attribute policy (IEEE80211_MAX_SSID_LEN). As defense in depth, the SSID memcpy could clamp ssid_len with min_t(size_t, pmksa->ssid_len, sizeof(pmk_op->pmk[0].ssid.SSID))."
+}

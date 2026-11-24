@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "dst_buf_info = container_of(fb, struct mtk_video_dec_buf, frame_buffer);",
+      "reason": "get_cap_buffer() can return NULL (the code itself handles fb == NULL when computing y_fb_dma/c_fb_dma), but container_of() is applied to fb unconditionally, producing an invalid pointer derived from NULL."
+    },
+    {
+      "statement": "v4l2_m2m_buf_copy_metadata(&src_buf_info->m2m_buf.vb, &dst_buf_info->m2m_buf.vb, true);",
+      "reason": "When no capture buffer is available (fb == NULL), dst_buf_info is a bogus near-NULL pointer and v4l2_m2m_buf_copy_metadata() writes through it, causing a NULL/invalid pointer dereference and kernel crash."
+    }
+  ],
+  "suggested_fix": "Check the return value of get_cap_buffer() immediately and bail out (e.g. return -ENOMEM/-EBUSY with an error log) if fb is NULL, before calling container_of() and v4l2_m2m_buf_copy_metadata(). With that check in place the 'fb ? ... : 0' conditionals become unnecessary. Optionally also zero-initialize the 'data' array passed to vpu_dec_start()."
+}

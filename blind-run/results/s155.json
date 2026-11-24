@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The CPL_ERR_CONN_EXIST retry path and the failure path each release the atid, dst, L2T entry and (for IPv6) the CLIP entry exactly once before reconnecting or dropping the endpoint reference. If defense in depth is wanted, add a NULL check on the result of lookup_atid() so that a bogus atid from the adapter is logged and ignored instead of being dereferenced."
+}

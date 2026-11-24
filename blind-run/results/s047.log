@@ -1,0 +1,10 @@
+▶ Scanning: samples/s047.c
+▶ Report:   results/s047.json
+I found no vulnerability in `btnxpuart_flush` in `samples/s047.c`, and wrote that verdict to `results/s047.json`.
+
+- **The free is guarded:** `nxpdev->rx_skb` is freed only after an `IS_ERR_OR_NULL()` check. That check matters because the receive path (`h4_recv_buf()`) can leave an error pointer in `rx_skb`. Freeing an error pointer, or using it as a buffer, would be a bad pointer access. This check looks like the patched form of that bug, not the vulnerable one.
+- **No double free or use after free:** `rx_skb` is set to `NULL` right after it is freed, so it can't be freed twice or used afterwards.
+- **Work is stopped first:** pending transmit work is cancelled with `cancel_work_sync()`, after the transmit queue has been emptied.
+
+One limit: I only had this function to go on. I'm assuming that nothing else touches `rx_skb` while the flush runs, and I couldn't check that without seeing the rest of the driver.
+✔ Report written to results/s047.json

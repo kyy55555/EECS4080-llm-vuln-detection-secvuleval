@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. Feature-dependent calls are guarded (e.g., ice_lag_rebuild only runs when ICE_F_SRIOV_LAG is supported, so pf->lag is not dereferenced when NULL; GNSS init checks ICE_F_GNSS; PTP rebuild checks ICE_FLAG_PTP_SUPPORTED). The error paths unwind in reverse order: scheduler cleanup, then control-queue shutdown, then the failure/restart state bits are set."
+}

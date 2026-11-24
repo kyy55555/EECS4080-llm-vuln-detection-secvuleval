@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "u8 proto = fou_from_sock(sk)->protocol;",
+      "reason": "fou_from_sock() returns sk->sk_user_data, which can be NULL. The UDP tunnel socket stays reachable for GRO lookups under RCU while the FOU tunnel is being torn down, and sk_user_data is cleared during that teardown. The pointer is dereferenced with no NULL check, so a packet arriving during the race causes a NULL pointer dereference and crashes the kernel."
+    }
+  ],
+  "suggested_fix": "Fetch the fou pointer first (struct fou *fou = fou_from_sock(sk);) and jump to out, returning NULL, if it is NULL. Only after that read fou->protocol to choose the offload. Apply the same check in the other FOU/GUE GRO handlers that call fou_from_sock()."
+}

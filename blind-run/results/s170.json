@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The vport list is walked with list_for_each_entry_safe under vport_lock, and the loop breaks right after the entry is unlinked and freed. In the nport loop, the nport is not touched after kref_put(): the loop breaks immediately, so the possibly freed nport is never dereferenced again (no list_del or loop advance after the release)."
+}

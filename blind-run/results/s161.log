@@ -1,0 +1,10 @@
+▶ Scanning: samples/s161.c
+▶ Report:   results/s161.json
+I marked `act_establish()` in `samples/s161.c` as vulnerable: it's a NULL pointer dereference (CWE-476). The answer is written to `results/s161.json`.
+
+- **The bug:** The `atid` comes from the hardware's connection-established message. `ep = lookup_atid(t, atid);` (line 11) returns NULL if that ID is invalid, stale or already freed, and the code never checks for that.
+- **The crash:** Line 16, `mutex_lock(&ep->com.mutex);`, then uses `ep` directly, and so do the lines after it (`ep->dst`, `ep->hwtid`, and so on). A NULL `ep` crashes the kernel, which is a denial of service.
+- **Suggested fix:** Check `ep` right after the lookup. If it's NULL, log a warning and return early without touching `ep`. Optionally, also check that `atid` is in range before the lookup.
+
+I based this only on the file, as instructed. I didn't compile or run anything, and I didn't check it against any upstream patch.
+✔ Report written to results/s161.json

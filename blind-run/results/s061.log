@@ -1,0 +1,14 @@
+▶ Scanning: samples/s061.c
+▶ Report:   results/s061.json
+I wrote `results/s061.json` with the verdict **not vulnerable**, but my confidence is low. This is one large function from the amdgpu GPU-reset path (`amdgpu_device_gpu_recover`), and I judged it only from this file.
+
+**The usual risk points look handled:**
+- **Hive pointer:** it is checked before use, and its reference is released at `end_reset`.
+- **RAS context:** `amdgpu_ras_get_context(adev)` is checked for NULL before `->reboot` is read.
+- **Ring pointers:** each one goes through `amdgpu_ring_sched_ready()` before it is used.
+- **Locking:** on every path that takes the reset-domain lock, it is released again. The `end_reset` path, taken when the health check fails, also unlocks `hive_lock`.
+
+**Two weaker points I listed only as hardening, not as vulnerabilities:**
+- **Unbounded retry:** when `amdgpu_do_asic_reset` returns `-EAGAIN`, the function jumps back to `retry` with no limit. The SR-IOV path is capped by `retry_limit`, but this one isn't.
+- **Wrong device in the loop:** the KFD init check at line 217 uses `adev` inside a loop over `tmp_adev`. On a multi-GPU (XGMI) setup, the other devices in the group are never checked.
+✔ Report written to results/s061.json

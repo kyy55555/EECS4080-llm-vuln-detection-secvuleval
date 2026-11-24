@@ -1,0 +1,12 @@
+▶ Scanning: samples/s031.c
+▶ Report:   results/s031.json
+I found no security vulnerability in `samples/s031.c`, and I wrote that verdict to `results/s031.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+The function `dasd_3990_erp_file_prot` does two things:
+1. It logs an error message unless the request has its suppress flag (`DASD_CQR_SUPPRESS_FP`) set.
+2. It marks the error-recovery request as failed through `dasd_3990_erp_cleanup`.
+
+Nothing here copies memory, indexes into a buffer, does arithmetic on sizes, or uses data from user space. The function uses `erp->startdev` without checking it for NULL. I'm assuming the error-recovery code always sets that field, but I can't confirm it from this one file.
+
+The only flaw is cosmetic: the function handles a "File Protected" error but logs it as a hardware error. That's misleading but not a security issue, and the `suggested_fix` field mentions rewording it.
+✔ Report written to results/s031.json

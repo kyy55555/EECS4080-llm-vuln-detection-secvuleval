@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. The error path frees the mailbox and its DMA buffer only when LPFC_MBX_WAKE is set, i.e. when the mailbox completed and is no longer owned by the firmware/completion handler. On timeout, ownership passes to the default completion handler (lpfc_sli_def_mbox_cmpl), which avoids a use-after-free or double free. For robustness, the second lpfc_sli_issue_mbox_wait() call could also check for MBX_NOT_FINISHED explicitly, and the MBX_NOT_FINISHED path could release the mailbox resources to avoid a minor leak."
+}

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "__free_pages(test->highmem, BUFFER_ORDER);",
+      "reason": "alloc_pages() can fail and return NULL. The code checks test->highmem before running the test, but then calls __free_pages() on it without checking. __free_pages() dereferences the page pointer (put_page_testzero), so if the allocation failed, this dereferences NULL and crashes the kernel."
+    },
+    {
+      "statement": "test->highmem = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, BUFFER_ORDER);",
+      "reason": "The result of this allocation is never checked for NULL before it reaches the unconditional __free_pages() cleanup."
+    }
+  ],
+  "suggested_fix": "Check the result of alloc_pages() right after the call. If it is NULL, set the return value to -ENOMEM, free test->buffer and test, and return without calling __free_pages(). Another option is to call __free_pages(test->highmem, BUFFER_ORDER) only when test->highmem is non-NULL. It would also help to return -ENOMEM when test->buffer allocation fails, instead of silently returning count."
+}

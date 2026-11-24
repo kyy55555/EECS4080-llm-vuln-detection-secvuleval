@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. smb2_compound_op() drops the cfile reference it is given. Before the -EINVAL retry, the function calls cifs_get_writable_path() again, so the retry has its own new reference (or NULL) and does not reuse the one already released. That avoids a use-after-free or double put of cfile. The retry also passes a NULL dentry, so it does not send the lease key again."
+}

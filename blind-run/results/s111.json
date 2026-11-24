@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-911",
+  "vulnerable_statements": [
+    {
+      "statement": "if (!dev || dev == sysfb_parent_dev(si)) {",
+      "reason": "sysfb_parent_dev() finds the parent PCI device through a pci_get_* lookup, which takes a reference on the device. The returned pointer is only compared and then thrown away, so that reference is never dropped. Each call leaks a device reference and the PCI device can never be freed. The result is also not checked with IS_ERR() before it is used."
+    }
+  ],
+  "suggested_fix": "Save the result of sysfb_parent_dev(si) in a local variable. If IS_ERR(parent), unlock and return. Otherwise compare it with dev, call sysfb_unregister() if needed, and then drop the reference with put_device(parent) before unlocking the mutex."
+}

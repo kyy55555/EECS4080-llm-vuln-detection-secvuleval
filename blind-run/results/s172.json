@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The parent dentry is pinned with dget_parent() and released with dput() (dput(NULL) is safe on the early-goto path), the child name is taken via a stable name snapshot that is released only when it was taken (file_name != NULL), and a stale DCACHE_FSNOTIFY_PARENT_WATCHED flag is cleared when the parent no longer watches children."
+}

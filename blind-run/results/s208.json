@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No security fix required. The rebuild path checks errors at each step and unwinds through the error labels, the main VSI and its netdev are NULL-checked before use, hw->fdir_prof is checked before replaying flows, and the LAG rebuild only runs when the SRIOV_LAG feature is supported. As a robustness improvement, the error path could also release the misc IRQ vector requested by ice_req_irq_msix_misc() when a later step fails."
+}

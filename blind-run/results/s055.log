@@ -1,0 +1,13 @@
+▶ Scanning: samples/s055.c
+▶ Report:   results/s055.json
+I wrote `results/s055.json` and marked the function **not vulnerable** (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why:
+- **ACPI device reference:** `adev` is released with `acpi_dev_put()` as soon as the physical node has been looked up.
+- **Codec device reference:** the reference taken with `get_device()` is dropped with `put_device()` on every error path: the platform-name fixup, the clock lookup, software-node creation and attachment, the GPIO lookup, and card registration.
+- **Late error paths:** these remove the software node and release the speaker GPIO with `gpiod_put()` if card registration fails.
+
+There is one hardening point, which I put in `suggested_fix` but did not count as a vulnerability. `mic_name[BYT_CHT_ES8316_MAP(quirk)]` uses a 4-bit map value to index an array with only 2 entries. Only a root-set `quirk_override` module parameter (or possibly the firmware quirk data, whose parsing isn't in this file) could push it out of range. A bounds check against `ARRAY_SIZE(mic_name)` would close that off.
+
+The sample also has a leftover `#endif` whose matching `#if` is commented out, so it wouldn't compile as written. That looks like an editing mistake in the sample, not a security problem.
+✔ Report written to results/s055.json

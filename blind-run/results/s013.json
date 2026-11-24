@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function rejects a NULL eswitch, checks permission with mlx5_esw_allowed(), and takes esw->state_lock before it checks esw->mode and calls _mlx5_eswitch_set_vepa_locked(). Because the mode check and the update both happen under the same lock, the eswitch mode cannot change in between (no TOCTOU race). The lock is released on every path."
+}

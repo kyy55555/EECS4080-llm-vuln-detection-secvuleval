@@ -1,0 +1,12 @@
+▶ Scanning: samples/s235.c
+▶ Report:   results/s235.json
+I found a use-after-free (CWE-416) in this function and wrote the result to `results/s235.json`.
+
+**The bug:** by the time `bpf_link_prime()` runs (`samples/s235.c:127`), the loop above it has already registered every uprobe. Each registered probe points back into the `uprobes` array and the `link`. If `bpf_link_prime()` fails (for example, because no file descriptor is available), the code jumps to `error_free`. That path frees the `uprobes` array and the `link` and drops the task and path references, but never unregisters the probes. The next time a probed address is hit, the kernel calls handlers that read the freed memory.
+
+**The fix:** add an error label that calls `bpf_uprobe_unregister(uprobes, cnt)` and then falls through to `error_free`. Point the `bpf_link_prime()` failure path at that new label.
+
+The JSON lists two lines, each copied exactly from the source: the `bpf_link_prime()` call, where the error path starts, and `kvfree(uprobes);`, where the memory is freed while probes still point to it.
+
+One other thing I noticed but left out of the result: the user-memory reads use `__get_user`, which skips the address check that `get_user` does. I treated the use-after-free as the main finding.
+✔ Report written to results/s235.json

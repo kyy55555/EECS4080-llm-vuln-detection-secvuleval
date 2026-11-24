@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "map_name[BYT_RT5640_MAP(byt_rt5640_quirk)], aif,",
+      "reason": "byt_rt5640_quirk can be set to an arbitrary value through the quirk_override module parameter (or DMI driver_data), and BYT_RT5640_MAP() extracts a multi-bit field that can exceed 4. map_name has only 5 entries, and nothing checks the index before using it, so the read can go past the end of the array. The out-of-bounds pointer is then passed to snprintf as a string."
+    },
+    {
+      "statement": "map_name[BYT_RT5640_MAP(byt_rt5640_quirk)]);",
+      "reason": "This is the same unchecked index into the 5-entry map_name array, used here to build the card long_name. It can also read out of bounds and dereference an invalid string pointer."
+    }
+  ],
+  "suggested_fix": "Check BYT_RT5640_MAP(byt_rt5640_quirk) against ARRAY_SIZE(map_name) before using it. If it is out of range, reject the quirk with an error, or fall back to a safe default such as \"none\"/BYT_RT5640_DMIC1_MAP and log a warning. Better still, check the quirk_override value when it is applied, so an invalid map field never reaches the code that formats the strings."
+}

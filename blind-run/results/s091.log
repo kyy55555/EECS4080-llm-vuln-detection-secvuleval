@@ -1,0 +1,13 @@
+▶ Scanning: samples/s091.c
+▶ Report:   results/s091.json
+I've written the result to `results/s091.json`: the function is vulnerable, with an out-of-bounds read (CWE-125).
+
+**The problem:** `nilfs_btree_check_delete` reads the child count (`nchildren`) from on-disk metadata and uses `nchildren - 1` as an array index without checking that the count is positive. A corrupted or crafted filesystem can set it to 0, which makes the index -1. Two statements are affected:
+
+1. **`samples/s091.c:19`** – `nilfs_btree_node_get_ptr(root, nchildren - 1, ...)`. The only check is `nchildren > 1`, so a value of 0 or less gets through. The read lands before the start of the root's pointer array, and that bad pointer is then passed to `nilfs_btree_get_block`.
+2. **`samples/s091.c:31`** – `nilfs_btree_node_get_key(node, nchildren - 1)`. There is no check on the count at all here, so the key is read before the start of the key array.
+
+**Suggested fix:**
+- In the height-3 case, return early when `nchildren <= 0`, not only when `nchildren > 1`.
+- After the node is chosen, check that `nchildren` is positive and no larger than the node can hold. If it isn't, call `brelse(bh)` and return before indexing.
+✔ Report written to results/s091.json

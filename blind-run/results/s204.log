@@ -1,0 +1,12 @@
+▶ Scanning: samples/s204.c
+▶ Report:   results/s204.json
+I judged `find_asymmetric_key()` in `samples/s204.c` **not vulnerable** and wrote that to `results/s204.json`, with `cwe` set to null and an empty `vulnerable_statements` list.
+
+What I checked:
+- **Null pointers:** the function reads an ID only after checking it is non-NULL. If all three IDs (`id_0`, `id_1`, `id_2`) are NULL, it returns `-EINVAL` before reading anything.
+- **Buffer size:** the allocation is `2 + 1 + len*2 + 1` bytes. That is exactly what the code writes: a 2-character prefix, `:`, `len*2` hex digits from `bin2hex`, and a terminating NUL. So there is no overflow or off-by-one.
+- **Allocation failure:** a failed `kmalloc` returns `-ENOMEM` straight away.
+- **Memory and references:** `req` is freed on every path. When the second-ID check rejects a key, the code calls `key_put()` before returning, so the key reference isn't leaked.
+
+One assumption: an `int` overflow in `len * 2` isn't possible only because ID lengths are small. That limit comes from the `asymmetric_key_id` struct, which isn't defined in this file, so I couldn't confirm it here.
+✔ Report written to results/s204.json

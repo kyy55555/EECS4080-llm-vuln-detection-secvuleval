@@ -1,0 +1,14 @@
+▶ Scanning: samples/s157.c
+▶ Report:   results/s157.json
+I marked this function as vulnerable (CWE-400, uncontrolled resource consumption) and wrote the result to `results/s157.json`.
+
+**The problem:** `__fsnotify_update_child_dentry_flags` updates every child of a directory in one pass. During that pass it holds the directory's `inode->i_lock` and `alias->d_lock` spinlocks, and it never pauses to let other work run. The loop at `samples/s157.c:22` has no upper bound. A directory can hold millions of cached child entries, including ones for files that don't exist. Any user can trigger the walk by adding or removing an inotify or fanotify watch on that directory. The kernel then holds spinlocks for a very long time, which can freeze CPUs and block every other CPU waiting on those locks. That makes it a local denial-of-service. The locking itself is correct, so this is not a memory-safety bug.
+
+**Statements listed:**
+- the loop over children (`hlist_for_each_entry(child, &alias->d_children, d_sib)`)
+- the per-child `spin_lock_nested(&child->d_lock, ...)` inside it, which makes the long lock hold worse
+
+**Suggested fix:** stop clearing the "parent is watched" flag on every child at once. Set it eagerly only when a watch is added. Clear it lazily: the next time a child reports an event, it checks that the parent no longer watches it and clears its own flag. Another option is to drop the locks and yield periodically during the walk, so the time spent holding a lock no longer grows with the number of children.
+
+I believe this matches a fix the kernel made upstream, the "clear PARENT_WATCHED flags lazily" change (possibly CVE-2024-47660). That comes from memory, not from the file, and I didn't check it, as the task required. The verdict itself rests only on the code.
+✔ Report written to results/s157.json

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s054.c
+▶ Report:   results/s054.json
+I marked the function as vulnerable and wrote the result to `results/s054.json`, but I'm only moderately confident in the conclusion.
+
+**Finding (CWE-908, use of an uninitialized resource):** At `samples/s054.c:9` the function declares `unsigned int data[2]` and never sets it. At line 70 it passes that array as the message payload in `vpu_dec_start(vpu, data, 2)`. Leftover kernel stack contents get sent to the video co-processor's firmware. That leaks kernel memory, and the firmware acts on garbage parameters.
+
+**Suggested fix:** Initialize the array to zero (`unsigned int data[2] = { 0 };`) and fill in the values the firmware expects.
+
+**Why I'm not more confident:**
+- **Firmware use is unconfirmed.** Whether the uninitialized values cause real harm depends on how the firmware reads them, and that isn't in this file.
+- **Possible second issue, not reported:** The code reads `buf[nal_start_idx]` at line 50 using an index returned by `mtk_vdec_h264_find_start_code`. That read could go past the end of the buffer if the search can return a value equal to `bs->size`. That function isn't in the sample, so I left it out of the vulnerable statements. The suggested fix does recommend checking that index against `bs->size`.
+✔ Report written to results/s054.json

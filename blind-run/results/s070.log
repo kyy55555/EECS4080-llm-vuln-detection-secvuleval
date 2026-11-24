@@ -1,0 +1,14 @@
+▶ Scanning: samples/s070.c
+▶ Report:   results/s070.json
+I found no security vulnerability in `snd_byt_rt5651_mc_probe`, and wrote that verdict to `results/s070.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why I judged it safe:
+- **ACPI device reference:** `adev` is used by `acpi_dev_name()` and `acpi_get_first_physical_node()` before `acpi_dev_put(adev)` releases it, so it is never used after being freed.
+- **Codec device reference:** the reference taken with `get_device(codec_dev)` is released by `put_device()` on every failure after it is taken. That covers both the `err` and `err_device` labels, and `device_remove_software_node()` runs only on the paths where the software node was added.
+- **GPIO and clock lookups:** "not found" (`-ENOENT`), probe deferral (`-EPROBE_DEFER`) and other errors are each handled correctly, and memory is allocated with automatically freed `devm_` helpers.
+- **Strings:** every string write uses a bounded `snprintf()` into a fixed buffer.
+
+One minor hardening point, which I put in `suggested_fix` but did not count as a vulnerability: the index into `mic_name[]` comes from the quirk bits. Those can be set through the `quirk_override` module parameter, which only root can change, so the index could be checked against `ARRAY_SIZE(mic_name)`.
+
+The sample also has an `#if` line commented out (line 195) while its `#endif` (line 204) is still there. That looks like a copy error in the sample rather than a security issue.
+✔ Report written to results/s070.json

@@ -1,0 +1,11 @@
+▶ Scanning: samples/s069.c
+▶ Report:   results/s069.json
+I found no vulnerability in `tc_irq_handler` in `samples/s069.c`, and wrote that verdict to `results/s069.json`: `is_vulnerable: false`, `cwe: null`, and an empty `vulnerable_statements` list.
+
+The three places where this kind of handler usually goes wrong are all guarded:
+- **Failed register read:** if the first read of `INTSTS_G` fails, the function returns before using `val`, so it never acts on garbage.
+- **Uninitialized data in the log:** `stat` is set to 0 before the unchecked `SYSSTAT` read. If that read fails, `dev_err` prints 0 rather than leftover stack data.
+- **Interrupt arriving too early:** the hotplug call only runs when `tc->hpd_pin >= 0` and `tc->bridge.dev` is set. An interrupt that fires before the bridge is attached can't dereference a NULL device pointer.
+
+One limit: since I could only use this file, I assumed `hpd_pin` is range-checked when the driver is set up. Nothing here checks it against an upper bound before it's used in the `INT_GPIO_H` / `INT_GPIO_LC` macros.
+✔ Report written to results/s069.json

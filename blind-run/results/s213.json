@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The loop is bounded by num_hid_devices, each entry is NULL-checked before use, and the slot is cleared to NULL after hid_destroy_device(), which prevents double free/use-after-free on repeated removal. As a hardening measure, the driver_data pointer could be saved and freed after hid_destroy_device() so it cannot be reached by any callback that runs during device teardown."
+}

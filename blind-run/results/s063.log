@@ -1,0 +1,11 @@
+▶ Scanning: samples/s063.c
+▶ Report:   results/s063.json
+I don't think `dmub_abm_set_pipe` in `samples/s063.c` has a vulnerability, and I wrote that verdict to `results/s063.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Here's why:
+- **No leftover stack data:** `memset(&cmd, 0, sizeof(cmd))` clears the whole command first (line 11), so no uninitialized stack memory goes to the firmware.
+- **Fixed payload size:** `payload_bytes` comes from `sizeof(struct dmub_cmd_abm_set_pipe_data)`, not from anything the caller passes in.
+- **Inputs aren't used for memory access:** `otg_inst`, `option`, `panel_inst` and `pwrseq_inst` are only copied into fields of the command. They are never used as array indexes, lengths or pointers here.
+
+One limit: I only looked at this file, so I can't tell whether callers pass valid instance numbers or how the firmware handles bad ones. The JSON suggests, as extra hardening, that callers check those values are in range.
+✔ Report written to results/s063.json

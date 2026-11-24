@@ -1,0 +1,12 @@
+▶ Scanning: samples/s097.c
+▶ Report:   results/s097.json
+I marked `samples/s097.c` as vulnerable (CWE-125, out-of-bounds read) and wrote the answer to `results/s097.json`.
+
+**The bug:** In the non-SMU branch, the code calls `fw_type_convert()` and uses the result `id` directly to index `adev->firmware.ucode[id]` without checking its range (line 15). For a firmware type it doesn't recognize, that conversion returns `AMDGPU_UCODE_ID_MAXIMUM`, which points one past the end of the array. The next check, `ucode->fw == NULL` (line 16), then reads memory outside the array. If that stray value happens to be non-NULL, the code goes on to treat `ucode->fw->data` as a firmware header and reads from it too.
+
+Two parts of this rest on what the function normally does in the kernel, not on anything visible in this file. The file doesn't include `fw_type_convert()`, so its return value for unknown types is an assumption. The array size `AMDGPU_UCODE_ID_MAXIMUM` is also assumed.
+
+**Fix:** Right after the `fw_type_convert()` call, add `if (id >= AMDGPU_UCODE_ID_MAXIMUM) return -EINVAL;`.
+
+I also checked the SMC branch for an overflow of `fw_name[30]`. The longest filename copied into it is 27 characters (for example `"amdgpu/polaris11_k2_smc.bin"`), so it fits with room for the terminator, and I didn't list that branch as vulnerable.
+✔ Report written to results/s097.json

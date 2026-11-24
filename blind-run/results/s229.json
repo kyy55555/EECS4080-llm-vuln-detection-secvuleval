@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-755",
+  "vulnerable_statements": [
+    {
+      "statement": "ret = ice_qp_ena(vsi, qid);",
+      "reason": "When ice_qp_dis() or ice_realloc_rx_xdp_bufs() fails, control jumps to xsk_pool_if_up with the error in 'ret' and pool_failure still 0. ice_qp_ena() then overwrites 'ret', so a successful re-enable makes the function return 0. The pool was never enabled or disabled, but the caller (the XSK core) believes the setup succeeded. Driver state and XSK state then disagree, for example the core may treat the pool as bound or released while the ring still references it, which can lead to use of a stale or missing pool."
+    },
+    {
+      "statement": "ret = ice_realloc_rx_xdp_bufs(rx_ring, pool_present);",
+      "reason": "The error from the Rx buffer reallocation is not saved anywhere that survives the error path. It is lost when ice_qp_ena() overwrites 'ret'."
+    }
+  ],
+  "suggested_fix": "Keep the setup error separate from the queue re-enable result. On failure of ice_qp_dis() or ice_realloc_rx_xdp_bufs(), store the error in pool_failure (or a separate variable) before jumping to xsk_pool_if_up, so ice_qp_ena() cannot overwrite it. Then always return the first error that occurred. Also skip napi_schedule() unless both the pool setup and the re-enable succeeded."
+}

@@ -1,0 +1,8 @@
+▶ Scanning: samples/s037.c
+▶ Report:   results/s037.json
+I judged `sysfb_disable` in `samples/s037.c` **not vulnerable** and wrote that to `results/s037.json`, with `cwe` set to null and no vulnerable statements.
+
+The function holds `disable_lock` while it removes the system framebuffer device and sets the `disabled` flag. Because both steps happen under the lock, the setup code can't slip in and register the framebuffer again after it has been disabled. I can't see that setup code, though: this only works if it takes the same lock and checks `disabled`, which I assumed.
+
+The only hardening I noted is optional. Before removing the device, the function could check that the caller actually owns that framebuffer device. Without that check, any caller can remove it, but I don't consider that a security flaw.
+✔ Report written to results/s037.json

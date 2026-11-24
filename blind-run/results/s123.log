@@ -1,0 +1,11 @@
+▶ Scanning: samples/s123.c
+▶ Report:   results/s123.json
+I found no vulnerability in this function and wrote that verdict to `results/s123.json`: `is_vulnerable: false`, `cwe: null`, and no vulnerable statements.
+
+The array writes all stay in bounds:
+- **Register address list:** `num_entries` is checked against `VBIOS_MC_REGISTER_ARRAY_SIZE` (line 35) before anything is written. If the BIOS table size field is too small, the subtraction wraps the value to 255, which also fails that check.
+- **Register data and timing entries:** the inner loop index `i` stops below `reg_table->last`, which can't exceed `num_entries`. That keeps `mc_data[i]` in bounds. The outer loop stops once `num_ranges` reaches `VBIOS_MAX_AC_TIMING_ENTRIES`, which keeps `mc_reg_table_entry[num_ranges]` in bounds.
+- **Edge case:** the `i == 0` case for `DATA_EQU_PREV` is skipped, so nothing reads before the start of the array.
+
+The fix field in the JSON says no fix is needed and suggests one optional hardening step. The offsets the function follows come from the BIOS and are never checked against the table size, so a malformed BIOS could cause reads past the end of the table. That's normally treated as trusted firmware input rather than a bug in this function.
+✔ Report written to results/s123.json

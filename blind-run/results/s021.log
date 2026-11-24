@@ -1,0 +1,10 @@
+▶ Scanning: samples/s021.c
+▶ Report:   results/s021.json
+I judged `__fsnotify_parent` in `samples/s021.c` **not vulnerable** and wrote that to `results/s021.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements). This comes from reading the file only; I didn't compile or test anything.
+
+The places where this kind of code usually goes wrong are all handled correctly:
+- **Mount pointer:** `real_mount(path->mnt)` is only reached when `path` is not NULL; otherwise the mask is 0.
+- **Parent directory:** `dget_parent()` takes a reference on the parent before the code uses its inode. The matching `dput(parent)` is safe on every path, including the early `goto notify` where `parent` is still NULL, because `dput` accepts NULL.
+- **File name copy:** the name snapshot is taken and released under the same condition (`file_name` being set), so it can't leak or be released twice.
+- **Mismatch check:** the `WARN_ON_ONCE` line only logs a warning if the inodes differ; it doesn't change what the function does.
+✔ Report written to results/s021.json

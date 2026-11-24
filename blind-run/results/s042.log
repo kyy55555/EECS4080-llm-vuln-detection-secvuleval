@@ -1,0 +1,10 @@
+▶ Scanning: samples/s042.c
+▶ Report:   results/s042.json
+I found no vulnerability in `gfx_v11_0_hw_init` and wrote that answer to `results/s042.json`. It's a judgement from this one file only, as instructed.
+
+- **Callbacks are checked before use:** `adev->gfx.imu.funcs` and each function it points to (`program_rlc_ram`, `load_microcode`, `setup_imu`, `start_imu`) are checked for NULL before being called (lines 7–24). So is `adev->nbio.funcs->gc_doorbell_init` (line 76). I assumed `adev->nbio.funcs` itself is always set during driver setup, which this file can't show.
+- **Errors stop the sequence:** if a step that can fail does fail, the function returns that error right away rather than carrying on with later steps (lines 13–15, 34–38, 50–52, 65–67, 79–81, 89–91).
+- **Older AMD GPU code had real bugs nearby:** some missed NULL checks on these IMU callbacks. This version already has them, so it looks like the corrected code.
+
+The JSON has `"is_vulnerable": false`, `"cwe": null` and an empty `vulnerable_statements` list.
+✔ Report written to results/s042.json

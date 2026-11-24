@@ -1,0 +1,10 @@
+▶ Scanning: samples/s033.c
+▶ Report:   results/s033.json
+I marked `hv_uio_rescind` in `samples/s033.c` as **vulnerable** and wrote the answer to `results/s033.json`. The bug is a NULL pointer dereference (CWE-476) that would crash the kernel.
+
+- **Problem:** the function gets the device with `channel->device_obj`. In Hyper-V's VMBus, only the main ("primary") channel has `device_obj` set. If this rescind callback runs for a sub-channel, `hv_dev` is NULL.
+- **Crash point:** `hv_get_drvdata(hv_dev)` then dereferences that NULL pointer. The next line, `pdata->info.irq = 0`, would also fail on a NULL or invalid `pdata`.
+- **Fix:** get the device from `channel->primary_channel->device_obj` when the channel is a sub-channel, so a sub-channel rescind still finds the right device. As a backup, return early if `hv_dev` or `pdata` is NULL.
+
+The verdict comes from reading the function plus what I remember of how VMBus sub-channels work. I didn't confirm it against other kernel files, since the task limited me to this one.
+✔ Report written to results/s033.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. num_entries is checked against VBIOS_MC_REGISTER_ARRAY_SIZE before mc_reg_address[] and mc_data[] are filled. If usRegIndexTblSize is too small, the u8 subtraction wraps to 255, which also fails that check. num_ranges is limited by VBIOS_MAX_AC_TIMING_ENTRIES before mc_reg_table_entry[] is indexed. As extra hardening, the code could check reg_block and reg_data offsets against the VRAM_Info table size returned by amdgpu_atom_parse_data_header, because these offsets come from the VBIOS."
+}

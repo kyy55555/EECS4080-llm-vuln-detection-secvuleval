@@ -1,0 +1,10 @@
+▶ Scanning: samples/s149.c
+▶ Report:   results/s149.json
+I marked this function as vulnerable: it can dereference a NULL pointer (CWE-476). The verdict is saved in `results/s149.json`.
+
+**The problem:** `samples/s149.c:48` loops over `&hive->device_list` without first checking that `hive` exists. `hive` comes from `amdgpu_get_xgmi_hive()`, which can return NULL. The branch only checks that the device isn't an SR-IOV virtual function and that there is more than one node, so a NULL `hive` crashes the kernel during GPU recovery. Every other use of `hive` in the function (the lock at line 37 and the cleanup at `end_reset`) is guarded by `if (hive)`, which suggests this one was missed.
+
+**Suggested fix:** add `&& hive` to the condition on line 47. If `hive` is NULL, the code then takes the single-device path. Another option is to exit with an error, so a multi-node setup without a hive doesn't silently reset only one device.
+
+I worked only from the source file and didn't compile or run anything. Part of the call is based on my recollection of an upstream kernel fix that added this same check, which I couldn't confirm because the task ruled out other sources.
+✔ Report written to results/s149.json

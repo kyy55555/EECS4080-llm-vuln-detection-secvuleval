@@ -1,0 +1,10 @@
+▶ Scanning: samples/s188.c
+▶ Report:   results/s188.json
+I marked `samples/s188.c` as vulnerable and wrote the result to `results/s188.json`. The bug is a race condition (CWE-362).
+
+- **What's wrong:** `ice_xdp()` runs both XDP setup operations without taking any lock. One attaches an XDP program (`ice_xdp_setup_prog`), the other sets up an AF_XDP pool (`ice_xsk_pool_setup`). Both rebuild the same queues and rings that the device reset path also rebuilds.
+- **What can happen:** If the device resets while one of these setup calls is running, the two can work on the same rings at once. That can corrupt ring state and cause a NULL pointer dereference or a use-after-free.
+- **Suggested fix:** Add a per-device mutex and hold it around both setup calls. The reset path should take the same mutex. While holding it, return `-EBUSY` if a reset is already in progress.
+
+The code itself doesn't show the race, because the reset path is in another file. I matched this version of the function to a known upstream kernel fix that added exactly this mutex. So the verdict relies on that recall, not on anything visible in the 20 lines alone.
+✔ Report written to results/s188.json

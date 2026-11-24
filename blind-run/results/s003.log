@@ -1,0 +1,10 @@
+▶ Scanning: samples/s003.c
+▶ Report:   results/s003.json
+I judged `vdec_vp8_slice_decode` in `samples/s003.c` **not vulnerable** and wrote that to `results/s003.json`. The CWE is set to `null` and the vulnerable-statements list is empty.
+
+- **Frame buffer is checked:** `get_cap_buffer()` can return NULL, and the result is checked at line 21. That happens before `container_of(fb, ...)` and before `fb->base_y` and `fb->base_c` are read. An unchecked NULL buffer at this point would have been the likely flaw, and this version already guards against it.
+- **Flush path is safe:** when `bs` is NULL, the function returns at line 16, before `bs` is used anywhere.
+- **Error paths are clean:** each one just returns `err` without touching any half-set-up state.
+
+The one weak spot I noted is at line 30: `buf_w * buf_h` is multiplied before being added to a 64-bit address, which may overflow if the fields are 32-bit. I didn't count it as a vulnerability, because the result is only an address handed to the hardware. The JSON suggests doing that multiplication in 64-bit as an optional hardening step.
+✔ Report written to results/s003.json

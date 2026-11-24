@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The probe initializes the work item, mutex and completion before anything can use them. It checks every allocation and registration for errors, and uses devm-managed resources so cleanup happens automatically. It also allocates the pmic_glink client (devm_pmic_glink_client_alloc) separately from registering it (pmic_glink_client_register), and registers it only after battmgr->client is set. Callbacks (qcom_battmgr_callback / qcom_battmgr_pdr_notify) therefore cannot run against a half-initialized battmgr or a NULL client, which avoids the probe-time race present in earlier versions."
+}

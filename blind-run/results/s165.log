@@ -1,0 +1,10 @@
+▶ Scanning: samples/s165.c
+▶ Report:   results/s165.json
+I marked this function as vulnerable and wrote the verdict to `results/s165.json`.
+
+**Finding: NULL pointer dereference (CWE-476)** at `samples/s165.c:14`. The function calls `link->link_enc->funcs->validate_output_with_stream(...)` without first checking that `link->link_enc` exists. The only check before it is that `link->ep_type == DISPLAY_ENDPOINT_PHY`, and that doesn't guarantee an encoder has been attached. Nothing in this file proves `link_enc` can actually be NULL here, so that part is my inference. If it is NULL (for example, when encoders are assigned to links dynamically and none is attached yet), the dereference crashes the kernel.
+
+**Suggested fix:** add `link->link_enc &&` to the condition before the call. Another option is to look up the encoder with the driver's assignment helper and return an error or skip encoder validation when there isn't one.
+
+I didn't report the other unchecked pointers (`tg`, `dc->link_srv`, `stream->link`). In normal driver use these are set when the device is initialised.
+✔ Report written to results/s165.json

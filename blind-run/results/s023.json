@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "if (primary)\n\t\tsysfb_disable();",
+      "reason": "sysfb_disable() runs only when the device is the VGA default device. Suppose the boot display is a PCI device without the VGA class. Then sysfb is never disabled here, but the loop below still detaches and unregisters the sysfb platform device (simpledrm/efifb) through aperture_detach_devices(). sysfb keeps its stale pointer to that device. If a different (VGA-class) GPU probes later, it calls sysfb_disable(), which unregisters the freed device again. That is a use-after-free or NULL pointer dereference."
+    },
+    {
+      "statement": "aperture_detach_devices(base, size);",
+      "reason": "This frees the firmware framebuffer platform device even when sysfb was not disabled first. That leaves sysfb's internal reference dangling."
+    }
+  ],
+  "suggested_fix": "Always disable sysfb before detaching the aperture devices, whether or not the device is primary. Pass the device so that sysfb is only torn down if it belongs to this device, e.g. call sysfb_disable(&pdev->dev) unconditionally. sysfb_disable() should check that the device matches and clear its stored pointer once the device is unregistered. Keep the 'primary' check only for removing the legacy VGA devices."
+}

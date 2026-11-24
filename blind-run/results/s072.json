@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The firmware ID returned by fw_type_convert() is bounds-checked against AMDGPU_UCODE_ID_MAXIMUM before indexing adev->firmware.ucode[], ucode->fw is NULL-checked, and every firmware name copied into fw_name[30] is at most 27 characters plus the NUL terminator, so the strcpy calls cannot overflow. As defensive hardening, strscpy/snprintf could replace strcpy, and the SMC header size/offset fields could be checked against adev->pm.fw->size."
+}

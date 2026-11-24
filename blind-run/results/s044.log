@@ -1,0 +1,12 @@
+▶ Scanning: samples/s044.c
+▶ Report:   results/s044.json
+I marked `samples/s044.c` as not vulnerable and wrote the result to `results/s044.json`.
+
+What I checked in `snd_byt_cht_cx2072x_probe`:
+- **Reference counting:** the ACPI device returned by `acpi_dev_get_first_match_dev()` is always released with `acpi_dev_put()`, which is safe to call even when no device was found. Its name is copied into `codec_name` before the release, so nothing uses the device after it is freed.
+- **Buffer size:** `snprintf` is limited to `sizeof(codec_name)`, so the name copy can't overflow.
+- **Null pointers:** the loop that finds the codec checks `num_codecs` before reading `codecs->name`. If no match is found, `dai_index` stays at 0, which is a valid entry.
+- **Errors:** a failure from `snd_soc_fixup_dai_links_platform_name()` is passed back to the caller.
+
+One small gap: `mach` is used without checking that it isn't NULL. It comes from the platform data that the machine-driver setup code provides, so I treated it as a robustness issue rather than a vulnerability. The JSON notes that a defensive check could be added.
+✔ Report written to results/s044.json

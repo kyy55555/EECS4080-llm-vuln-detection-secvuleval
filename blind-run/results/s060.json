@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "persistent_id = recon_v2->Fid.PersistentFileId;",
+      "reason": "The create context is cast to struct create_durable_reconn_v2_req without checking that DataOffset + DataLength covers sizeof(struct create_durable_reconn_v2_req). A client can send a short DH2C context, so reading Fid and then CreateGuid (in the memcmp) goes past the end of the request buffer."
+    },
+    {
+      "statement": "persistent_id = recon->Data.Fid.PersistentFileId;",
+      "reason": "The DHnC context is cast to struct create_durable_reconn_req with no length check, so a truncated context leads to an out-of-bounds read of Data.Fid."
+    },
+    {
+      "statement": "dh_info->fp = ksmbd_lookup_fd_cguid(durable_v2_blob->CreateGuid);",
+      "reason": "The DH2Q context is cast to struct create_durable_req_v2 with no length check. CreateGuid, and later Flags and Timeout, are read from client-controlled data that may be shorter than the struct, so these reads can go out of bounds."
+    }
+  ],
+  "suggested_fix": "Before casting each durable context, check that le16_to_cpu(context->DataOffset) + le32_to_cpu(context->DataLength) is at least the size of the matching struct (create_durable_reconn_v2_req, create_durable_reconn_req, create_durable_req_v2). If it is smaller, return -EINVAL. Separately, in the DH2Q replay path, refuse to rebind a handle that is still active (fp->conn != NULL): drop the reference and return an error instead of overwriting fp->conn."
+}

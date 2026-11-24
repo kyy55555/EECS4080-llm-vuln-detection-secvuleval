@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "struct mt792x_dev *dev = mvif->phy->dev;",
+      "reason": "The device pointer is taken through the per-vif mvif->phy pointer. The callback can run while the vif is not fully set up or is being torn down (for example, during interface add/remove or reset), and then mvif->phy can be NULL. The function dereferences it without checking, which causes a kernel NULL pointer dereference (oops/DoS). The array bounds and locking around the address list are handled correctly."
+    }
+  ],
+  "suggested_fix": "Get the device from the ieee80211_hw rather than from the per-vif phy pointer, for example `struct mt792x_dev *dev = mt792x_hw_dev(hw);`, because hw->priv is always valid while the callback is registered. Another option is to check that mvif->phy is not NULL and return early if it is."
+}

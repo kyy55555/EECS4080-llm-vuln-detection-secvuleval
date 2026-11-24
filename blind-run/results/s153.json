@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-362",
+  "vulnerable_statements": [
+    {
+      "statement": "new_node->children[0] = n;",
+      "reason": "The preallocated node gets a pointer to the current root before the cmpxchg. If another thread wins the race and makes the tree deeper first, the cmpxchg fails, but new_node still holds that pointer to the old root. On the next pass the loop can break without using new_node as the root."
+    },
+    {
+      "statement": "if ((v = cmpxchg_release(&radix->root, r, new_root)) == r) {",
+      "reason": "The path where the cmpxchg fails does not clear new_node->children[0]. The not-zeroed node is then used in the second loop, where cmpxchg_release(p, NULL, new_node) inserts it as an inner node or leaf. That node already contains a stale pointer to the old root, which can cause tree corruption, aliasing or cycles, or a non-zero leaf being returned to the caller."
+    },
+    {
+      "statement": "if (!(n = cmpxchg_release(p, NULL, new_node)))",
+      "reason": "This statement inserts the reused preallocated node, which may not be zeroed after a lost root race, into the tree."
+    }
+  ],
+  "suggested_fix": "When the root cmpxchg fails, set new_node->children[0] back to NULL so the leftover preallocated node is fully zeroed again before it is reused. Alternatively, free new_node after a lost race, or set children[0] only on the copy that is actually published as the root."
+}

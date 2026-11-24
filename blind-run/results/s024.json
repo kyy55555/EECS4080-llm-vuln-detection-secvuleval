@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-129",
+  "vulnerable_statements": [
+    {
+      "statement": "tx_chn = &am65_ndev_to_common(ndev)->tx_chns[cpu % AM65_CPSW_MAX_TX_QUEUES];",
+      "reason": "The TX channel index comes from the CPU number modulo the compile-time maximum (AM65_CPSW_MAX_TX_QUEUES). It should be bounded by the number of channels actually configured (common->tx_ch_num), which can be lower, for example after ethtool -L. When fewer channels are active, XDP redirect on some CPUs picks a tx_chns[] slot that was never initialised or was torn down. Its id, netdev queue, DMA channel and descriptor pool are then used, which leads to a NULL or invalid pointer dereference and memory corruption in am65_cpsw_xdp_tx_frame() and netdev_get_tx_queue()."
+    }
+  ],
+  "suggested_fix": "Bound the index by the number of TX channels that are actually configured, not the compile-time maximum. For example: struct am65_cpsw_common *common = am65_ndev_to_common(ndev); tx_chn = &common->tx_chns[cpu % common->tx_ch_num];. This way only initialised, active channels and their matching netdev TX queues are used."
+}

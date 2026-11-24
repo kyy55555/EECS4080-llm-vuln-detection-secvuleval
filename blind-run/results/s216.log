@@ -1,0 +1,10 @@
+▶ Scanning: samples/s216.c
+▶ Report:   results/s216.json
+I marked this function as vulnerable and wrote the result to `results/s216.json`. The bug is a possible NULL pointer dereference (CWE-476).
+
+- **The cause:** `mt76_connac_get_he_phy_cap()` (`samples/s216.c:8`) can return NULL, and the function never checks for that. The pointer is still used to set `ve = &vc->he_cap_elem` (line 9).
+- **The crash:** The later reads of `ve->phy_cap_info[5]` (lines 23 and 54) would then go through a NULL pointer, so the kernel crashes and the system goes down.
+- **Fix:** Check whether `vc` is NULL right after the call and return early if it is, before setting `ve` or reading anything from it.
+
+This comes from reading the code only, as instructed. The conclusion that the helper can return NULL is my understanding of that function, since its body isn't in this file. I also recalled an upstream kernel fix that adds exactly this NULL check to this function, but I couldn't confirm it without looking outside the file.
+✔ Report written to results/s216.json

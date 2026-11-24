@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The child-node loop releases the fwnode reference (fwnode_handle_put) on every early-return path, the 'reg' value is bounds-checked against PMIC_GLINK_MAX_PORTS before indexing port_orientation[], and all allocation/creation results are checked. Optionally, device_for_each_child_node_scoped() could be used to make the reference handling automatic and more robust against future edits."
+}

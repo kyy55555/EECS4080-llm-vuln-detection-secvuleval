@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-843",
+  "vulnerable_statements": [
+    {
+      "statement": "if (parent->auto_domain || !parent->nest_parent)",
+      "reason": "The parent HWPT is validated only for auto_domain/nest_parent; it never checks that parent->common.domain->owner matches the ops of the device's IOMMU driver. On a system with several IOMMU drivers, userspace can pass a nest-parent HWPT created by one driver together with a device behind another driver."
+    },
+    {
+      "statement": "hwpt->domain = ops->domain_alloc_user(idev->dev, flags & ~IOMMU_HWPT_FAULT_ID_VALID, parent->common.domain, user_data);",
+      "reason": "The foreign parent domain goes to this driver's domain_alloc_user. The driver then casts it to its own domain type (for example with container_of/to_xxx_domain) and reads or writes fields that do not exist. This is type confusion and can corrupt memory or read out of bounds."
+    }
+  ],
+  "suggested_fix": "Before allocating the nested domain, check that the parent domain belongs to the same IOMMU driver. For example, extend the check to `if (parent->auto_domain || !parent->nest_parent || parent->common.domain->owner != ops) return ERR_PTR(-EINVAL);`. Then domain_alloc_user only ever gets a parent domain of its own type."
+}

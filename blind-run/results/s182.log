@@ -1,0 +1,12 @@
+▶ Scanning: samples/s182.c
+▶ Report:   results/s182.json
+I wrote the verdict to `results/s182.json`: **vulnerable, CWE-404 (Improper Resource Shutdown or Release)**. My confidence is moderate.
+
+**The problem:** `pnv_php_disable_irq()` frees the interrupt handler and resets `php_slot->irq` to 0. But it only releases the MSI/MSI-X interrupt vectors underneath that handler (`pci_disable_msix()` / `pci_disable_msi()`) inside the `if (disable_device)` block. When the function is called with `disable_device == false`, those vectors stay allocated. If the slot is then plugged in again and its interrupts are re-enabled, the kernel can hit warnings or crash.
+
+**What the verdict rests on:** The file contains only this function, so I couldn't see which callers pass `disable_device == false`. I assumed the hot-unplug path does. I also relied on recalling a later kernel fix that looks like a patched version of this function; I didn't check it against any source. If no caller ever passes `false` without already releasing the vectors elsewhere, this verdict is a false positive.
+
+**Flagged statements:** `if (disable_device) {` and `free_irq(php_slot->irq, php_slot);`.
+
+**Suggested fix:** Separate releasing the interrupt vectors from disabling the device. Add a `disable_msi` flag and release the vectors when either flag is set. Call `pci_disable_device()` only when `disable_device` is set. The unplug path would pass `disable_msi = true`, so the vectors are always released after `free_irq()`.
+✔ Report written to results/s182.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The device is unregistered first, so no new transmits can re-arm the LED timer. The pending timer is then cancelled with del_timer_sync() before free_netdev() frees the private data, so the timer handler cannot run on freed memory (no use-after-free)."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The links array is reallocated before the pad/lb pointers are taken, so neither pointer is stale. The devm_kasprintf() and devm_kzalloc() results are both checked for NULL before use, which avoids a NULL pointer dereference. The of_node_get() call balances the reference that axg_card_clean_references() later drops."
+}

@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "if (!ras->disable_ras_err_cnt_harvest) {",
+      "reason": "amdgpu_ras_get_context(adev) can return NULL (e.g. RAS not initialized/supported), and ras is dereferenced without a NULL check inside the interrupt handler."
+    },
+    {
+      "statement": "obj->err_data.ue_count += err_data.ue_count;",
+      "reason": "amdgpu_ras_find_obj() may return NULL if no RAS object is registered for the NBIO block (e.g. RAS init failed or block not enabled); obj is dereferenced without being checked, causing a NULL pointer dereference."
+    },
+    {
+      "statement": "obj->err_data.ce_count += err_data.ce_count;",
+      "reason": "Same unchecked possibly-NULL obj pointer is dereferenced (also later read in the dev_info calls)."
+    }
+  ],
+  "suggested_fix": "Check both pointers before use, e.g. change the condition to `if (ras && !ras->disable_ras_err_cnt_harvest && obj) { ... }` so that error-count harvesting and logging (which dereference obj) are skipped when the RAS context or the NBIO RAS object is not available. The interrupt status clear and GPU reset can still proceed."
+}

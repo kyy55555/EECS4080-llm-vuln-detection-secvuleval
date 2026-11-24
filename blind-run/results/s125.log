@@ -1,0 +1,8 @@
+▶ Scanning: samples/s125.c
+▶ Report:   results/s125.json
+I judged `samples/s125.c` not vulnerable and wrote that to `results/s125.json`.
+
+The file holds only `fou_from_sock()`, a one-line helper that returns the socket's private data pointer (`sk_user_data`). It reads that pointer with `rcu_dereference_sk_user_data()`, the safe way to read data that another thread can change or remove at the same time. That rules out an unsafe plain read of the pointer.
+
+One caveat, also in the JSON's `suggested_fix`: whether the code is safe overall depends on the callers, which aren't in this file. They must hold the RCU read lock while calling this, and must check for a NULL return, since the data can be detached from the socket. A caller that skips the NULL check would crash on a NULL pointer, but that bug would be in the caller, not in this function.
+✔ Report written to results/s125.json

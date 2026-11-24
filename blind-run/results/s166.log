@@ -1,0 +1,18 @@
+▶ Scanning: samples/s166.c
+▶ Report:   results/s166.json
+I found a vulnerability in `module_add_driver` and wrote the answer to `results/s166.json`.
+
+**Verdict:** vulnerable, CWE-476 (NULL pointer dereference).
+
+**The problem:** every error in this function jumps to the same `out:` cleanup label, and that label always runs `sysfs_remove_link(mk->drivers_dir, driver_name);` (line 54).
+
+- **Out of memory:** if `make_driver_name()` fails, `driver_name` is NULL. Passing a NULL name into `sysfs_remove_link()` makes the kernel's sysfs lookup read through that NULL pointer, which crashes the kernel.
+- **Missing directory:** if `mk->drivers_dir` is NULL, the same call runs against the top level of sysfs instead of the intended directory. It also tries to remove a link that was never created.
+
+**Suggested fix:** split the cleanup into separate error labels so each failure only undoes what was actually set up:
+- If allocating the name fails, only remove the `"module"` link.
+- If `drivers_dir` is NULL, free the name and remove the `"module"` link.
+- Never call `sysfs_remove_link()` with a NULL name or directory.
+
+I listed only line 54 as the vulnerable statement. The `goto out;` lines that lead to it can't be quoted as one exact line because the same text appears three times.
+✔ Report written to results/s166.json

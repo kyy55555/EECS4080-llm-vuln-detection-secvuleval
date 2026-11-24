@@ -1,0 +1,10 @@
+▶ Scanning: samples/s147.c
+▶ Report:   results/s147.json
+I judged `access_gic_sgi` in `samples/s147.c` **not vulnerable** and wrote that verdict to `results/s147.json`.
+
+- **Reads are rejected.** These SGI registers are write-only, so a read attempt goes straight to `read_from_write_only` and nothing else happens (line 8).
+- **The register is identified correctly.** On 32-bit (AArch32) access it decides from `Op1`, and on 64-bit (AArch64) access from `Op2`. Either way it works out which interrupt group the guest is asking for. The `default` cases only quiet compiler warnings and fall back to Group 1, which is harmless.
+- **No unsafe memory use here.** The function only passes the guest's written value and the group flag on to `vgic_v3_dispatch_sgi`. That function checks which CPUs the interrupt targets and which interrupt number it is. I couldn't confirm those checks because the task limited me to this one file.
+
+The JSON has `is_vulnerable: false`, `cwe: null` and an empty `vulnerable_statements` list.
+✔ Report written to results/s147.json

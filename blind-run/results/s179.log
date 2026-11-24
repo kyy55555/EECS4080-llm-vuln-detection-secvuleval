@@ -1,0 +1,11 @@
+▶ Scanning: samples/s179.c
+▶ Report:   results/s179.json
+I found no vulnerability in `fou_gro_receive` and wrote that verdict to `results/s179.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why it looks safe:
+- **NULL pointer:** `fou_from_sock(sk)` can return NULL while the socket is being closed. The function checks for that (`if (!fou) goto out;`) before using the pointer.
+- **Array bounds:** the protocol number is a `u8`, so it can't index past the 256-entry offload table.
+- **Callback use:** the table entry is read with `rcu_dereference`, which is safe here because this receive path already runs under RCU protection. Both the entry and its `gro_receive` callback are checked for NULL before the call.
+
+The NULL check matches what I recall of an upstream kernel fix for a NULL-pointer crash in this function, so this looks like the patched version. I didn't confirm that, since the task limited me to this one file.
+✔ Report written to results/s179.json

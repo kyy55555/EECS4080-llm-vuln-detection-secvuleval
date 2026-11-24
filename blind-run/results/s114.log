@@ -1,0 +1,10 @@
+▶ Scanning: samples/s114.c
+▶ Report:   results/s114.json
+I judged the function vulnerable: it leaks memory (CWE-401). The answer is saved to `results/s114.json`.
+
+**The problem:** at `samples/s114.c:12`, the function maps a reserved memory region with plain `memremap()`, and nothing ever unmaps it. If the magic-number check fails, the function returns `-EINVAL` at line 21 without calling `memunmap()`. The mapping leaks, and the global `cmd_db_header` still points at a mapping that a failed probe left behind.
+
+**Suggested fix:** use `devm_memremap()` with an `IS_ERR()` check, so the kernel releases the mapping automatically when probe fails or the device is removed. The other option is to call `memunmap()` and set `cmd_db_header` to `NULL` on the error path.
+
+The text `return -EINVAL;` appears twice in the function (lines 9 and 21). The JSON entry means the second one, and its "reason" text says so, since the required format has no line-number field.
+✔ Report written to results/s114.json

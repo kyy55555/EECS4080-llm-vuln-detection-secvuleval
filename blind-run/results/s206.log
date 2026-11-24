@@ -1,0 +1,10 @@
+▶ Scanning: samples/s206.c
+▶ Report:   results/s206.json
+I judged this function **not vulnerable** and wrote that to `results/s206.json` (no CWE, no vulnerable statements).
+
+`access_gic_sgi` handles a VM's writes to the registers that send interrupts between virtual CPUs (the `ICC_SGI*R` registers). It looks safe for three reasons:
+
+- **The interrupt-controller check is there.** It calls `kvm_has_gicv3()` before going further. If the VM has no GICv3 interrupt controller, it rejects the access as an undefined instruction and returns early. So a VM without one can't reach `vgic_v3_dispatch_sgi()` and use state that was never set up. A missing check at exactly this point is the typical way a function like this goes wrong, and this version has it.
+- **Reads are handled.** These registers are write-only, so read attempts go to `read_from_write_only()`.
+- **`g1` is always set.** In both `switch` statements the `default` falls through to a `case` that assigns `g1`, so it is never used uninitialized.
+✔ Report written to results/s206.json

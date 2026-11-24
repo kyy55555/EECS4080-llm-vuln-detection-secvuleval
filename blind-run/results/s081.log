@@ -1,0 +1,13 @@
+▶ Scanning: samples/s081.c
+▶ Report:   results/s081.json
+I judged `samples/s081.c` vulnerable and wrote the result to `results/s081.json`. The bug is a use-after-free (CWE-416). I'm fairly confident about the bug itself. Which specific kernel fix this sample matches is my inference from the code; I didn't check any other source.
+
+**The problem:** `smb2_sess_setup` looks up a session and keeps using it without taking a reference on it. The only lock it holds, `ksmbd_conn_lock(conn)`, protects just the current connection. Another connection can log off or tear down the session at the same time and free it. This function would then keep reading and writing the freed memory.
+
+**Statements flagged:**
+- **Line 36, `ksmbd_session_lookup_slowpath(sess_id)`:** the multichannel binding path finds the session in a table shared by all connections. It then reads `sess->dialect`, `sess->ClientGUID`, `sess->state` and `sess->user` with no reference held.
+- **Line 92, `ksmbd_session_lookup(...)`:** the same missing reference here. It matters because the session is used across slow steps: hash generation, authentication, and a 5-second sleep on the error path.
+- **Line 237, `sess->state = SMB2_SESSION_EXPIRED`:** the error path writes to a session that may already be freed. It also leaves the stale pointer in `work->sess`, where later code can use it again.
+
+**Suggested fix:** make both lookup functions take a reference while they still hold the session-table lock. Then release it on every exit path, including the error gotos, the `need_reconnect` cases that set `sess = NULL`, and the `out_err` cleanup, where `work->sess` should also be cleared. On success, `work->sess` takes over the reference and releases it when the request finishes.
+✔ Report written to results/s081.json

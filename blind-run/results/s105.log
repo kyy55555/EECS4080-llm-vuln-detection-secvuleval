@@ -1,0 +1,12 @@
+▶ Scanning: samples/s105.c
+▶ Report:   results/s105.json
+I judged `dasd_ese_needs_format` in `samples/s105.c` not vulnerable and wrote that to `results/s105.json`.
+
+- **Null checks:** every pointer is checked before use: `block`, `device`, the `discipline->is_ese` callback, and the sense data returned by `dasd_get_sense(irb)`.
+- **Buffer reads:** it only reads two fixed positions in the sense data, `sense[1]` and `sense[2]`. That data is normally a 32-byte area inside the interrupt response block (`irb`), so neither read goes past the end.
+- **Logic:** the rest just tests flag bits to decide whether the track needs formatting, with nothing exploitable in it.
+
+The JSON has `is_vulnerable: false`, `cwe: null` and an empty `vulnerable_statements` list.
+
+Two assumptions sit behind this, since I only had this file. First, `device->discipline` itself is never checked for NULL. I treated that as safe because a DASD device in use always has a discipline set. Second, the 32-byte sense size comes from how this structure normally works, not from anything in the file.
+✔ Report written to results/s105.json

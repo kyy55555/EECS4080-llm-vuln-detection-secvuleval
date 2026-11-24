@@ -1,0 +1,13 @@
+▶ Scanning: samples/s152.c
+▶ Report:   results/s152.json
+I found no vulnerability in `act_open_rpl` in `samples/s152.c`, and wrote `results/s152.json` with `is_vulnerable: false`, `cwe: null` and an empty `vulnerable_statements` list.
+
+I worked only from this one file, so I couldn't check the helper functions it calls. It also appears to match the current fixed version of this kernel function as I remember it, which supports a "not vulnerable" verdict.
+
+- **Lookup check:** `lookup_atid()` is checked for NULL (line 16) before the endpoint is used.
+- **Negative-advice path:** It only updates counters and returns early (lines 27–35). Nothing is freed, so nothing is freed twice.
+- **Connection-exists retry path:** It frees the atid, route and neighbour-table resources and the IPv6 address entry once, then calls `c4iw_reconnect()` and returns (lines 59–77). It never reaches the shared cleanup at `fail:`.
+- **Table-full path:** It either sends the firmware request and returns, or jumps to `fail:` if the send fails (lines 46–57). Cleanup runs only once either way.
+- **Shared cleanup at `fail:`:** It releases the IPv6 address entry, connection ID, atid, route and neighbour-table entries once each, then drops the endpoint reference (lines 94–112).
+- **Logging:** The IPv4 and IPv6 messages read fields from the endpoint's own fixed-size address storage, so there is no out-of-bounds read.
+✔ Report written to results/s152.json

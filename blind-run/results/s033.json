@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "struct hv_device *hv_dev = channel->device_obj;",
+      "reason": "The rescind callback can run for a VMBus sub-channel as well as for the primary channel. Only the primary channel has device_obj set. For a sub-channel, device_obj is NULL, so hv_dev is NULL."
+    },
+    {
+      "statement": "struct hv_uio_private_data *pdata = hv_get_drvdata(hv_dev);",
+      "reason": "hv_get_drvdata() dereferences hv_dev (&hv_dev->device) without checking it. When a sub-channel is rescinded, hv_dev is NULL, so this is a NULL pointer dereference and the kernel crashes. If the lookup returns NULL, pdata->info is dereferenced next, which also crashes."
+    },
+    {
+      "statement": "pdata->info.irq = 0;",
+      "reason": "pdata is used without checking it. If the device pointer or driver data is NULL (for example, during a sub-channel rescind), this write dereferences a NULL or invalid pointer."
+    }
+  ],
+  "suggested_fix": "Get the device from the primary channel so that a sub-channel rescind still finds the right hv_device, e.g. 'struct hv_device *hv_dev = channel->primary_channel ? channel->primary_channel->device_obj : channel->device_obj;' (or always use channel->primary_channel->device_obj for sub-channels). As defense in depth, return early if hv_dev or pdata is NULL before touching pdata->info."
+}

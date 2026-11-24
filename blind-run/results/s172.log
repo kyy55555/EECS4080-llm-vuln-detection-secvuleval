@@ -1,0 +1,12 @@
+▶ Scanning: samples/s172.c
+▶ Report:   results/s172.json
+I found no vulnerability in `__fsnotify_parent` in `samples/s172.c`, and wrote that verdict to `results/s172.json`: `is_vulnerable: false`, `cwe: null`, and no vulnerable statements.
+
+Why I judged it safe:
+- **Parent reference:** The parent directory entry is held with `dget_parent()` before it is used, then released with `dput()`. On the early-exit path that skips the parent, `parent` is still `NULL`, and `dput(NULL)` does nothing, so that path is safe too.
+- **Child name:** The name comes from `take_dentry_name_snapshot()`, so it can't change if the file is renamed while the event is sent. It is released only when it was actually taken (when `file_name` is set).
+- **Stale flag:** If the child is marked as having a watched parent but the parent no longer watches its children, the flag is cleared with `fsnotify_clear_child_dentry_flag()`.
+- **Mismatch check:** The `WARN_ON_ONCE` only logs a warning if the event data doesn't match the child inode. It changes nothing.
+
+I worked only from this file, as instructed. Bugs that depend on the helper functions it calls, or on locking elsewhere, can't be checked from here.
+✔ Report written to results/s172.json

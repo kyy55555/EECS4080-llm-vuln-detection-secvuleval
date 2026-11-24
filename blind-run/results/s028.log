@@ -1,0 +1,10 @@
+▶ Scanning: samples/s028.c
+▶ Report:   results/s028.json
+I marked this function as not vulnerable and wrote the result to `results/s028.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+- **Fixed-size copies:** the BSSID copy (`ETH_ALEN` bytes) and the PMKID copy (`WLAN_PMKID_LEN` bytes) are the same size as the fields they go into.
+- **SSID copy (line 29):** this is the only questionable line. It copies `pmksa->ssid_len` bytes and doesn't check that length itself. From kernel knowledge (not from this file), this data comes from userspace through nl80211, which already caps the SSID at 32 bytes (`IEEE80211_MAX_SSID_LEN`). The destination holds 32 bytes, so it can't overflow through that path.
+- **Memory:** the buffer is zero-filled when allocated, sent with its full size, and freed on every path. I found no leak or out-of-bounds use.
+
+**Main uncertainty:** this verdict depends on that nl80211 limit, which isn't visible in this file. If the study judges each function on its own, line 29 would count as an overflow risk (CWE-120 or CWE-787). As a defensive fix, the JSON suggests clamping the copy length to the size of the SSID field.
+✔ Report written to results/s028.json

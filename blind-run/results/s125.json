@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The accessor reads sk_user_data with rcu_dereference_sk_user_data(), which is the right RCU-safe access. Callers (for example the GRO receive paths) must still run under rcu_read_lock and check for a NULL return, because the fou may have been detached from the socket."
+}

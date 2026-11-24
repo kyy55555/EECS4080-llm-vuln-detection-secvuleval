@@ -1,0 +1,10 @@
+▶ Scanning: samples/s014.c
+▶ Report:   results/s014.json
+I wrote `results/s014.json` and marked `ice_rebuild` as **not vulnerable**. I'm only moderately sure: I could only see this one function, not the code it calls.
+
+- **Feature checks:** calls that depend on optional features only run when that feature is present. LAG rebuild only runs if `ICE_F_SRIOV_LAG` is supported, so a missing LAG structure is never touched. GNSS setup checks `ICE_F_GNSS`, and PTP rebuild checks `ICE_FLAG_PTP_SUPPORTED`.
+- **Error handling:** when a step fails, the function undoes earlier setup in reverse order. It cleans up the scheduler first, then shuts down the control queues. Last, it sets the `ICE_RESET_FAILED` and `ICE_NEEDS_RESTART` flags.
+- **No unsafe memory handling:** the function copies no buffers, does no index or length arithmetic, and frees nothing that could be used again afterwards.
+
+I recall an upstream fix for a NULL pointer crash when a device doesn't support SRIOV_LAG. It added the feature check around `ice_lag_rebuild`, so this file looks like the already-fixed version. I couldn't confirm that, since the task was limited to this one file.
+✔ Report written to results/s014.json

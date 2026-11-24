@@ -1,0 +1,17 @@
+▶ Scanning: samples/s228.c
+▶ Report:   results/s228.json
+I judged the function vulnerable (CWE-824, use of an uninitialized pointer) and wrote the answer to `results/s228.json`. One caveat up front: `iter` and the `iwl_mvm_ftm_iter_data` struct are defined outside this file, so what the callback does with the struct is my assumption, not something the file shows.
+
+**The flaw:** in the associated-AP branch, the local `struct iwl_mvm_ftm_iter_data target` only gets `bssid` and `cipher` set. Its `tk` field is never initialized before the struct is passed to `ieee80211_iter_keys(mvm->hw, vif, iter, &target)`.
+
+**Why it matters:** I assumed the `iter` callback copies the matching key into `target->tk`. If so:
+- **Memory corruption:** the key is written through a leftover stack value, so it lands at an arbitrary kernel address.
+- **Stale data sent out:** the caller's real `tk` buffer is never filled, so whatever was already on the stack goes to the firmware as the key.
+
+**Suggested fix:**
+1. Initialize the struct to zero (`= {}`) and set `target.tk = tk` before the call.
+2. Check that a key was actually found.
+3. If none was, clear `tk` or don't set the `SECURED` flag.
+
+The file has a commented-out `#ifdef CONFIG_IWLWIFI_DEBUGFS` next to a live `#endif`, which looks like it was introduced when the sample was prepared. I didn't treat it as part of the vulnerability.
+✔ Report written to results/s228.json

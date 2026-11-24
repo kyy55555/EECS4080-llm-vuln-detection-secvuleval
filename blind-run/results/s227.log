@@ -1,0 +1,13 @@
+▶ Scanning: samples/s227.c
+▶ Report:   results/s227.json
+I judged `pm8001_phy_control` in `samples/s227.c` **not vulnerable** and wrote that to `results/s227.json`. This comes from reading the code only; I didn't compile or test anything.
+
+Why I didn't flag it:
+- **`phy_id` is trusted:** it comes from `sas_phy->id`, which the SAS layer assigns and which stays within the controller's own phy count. Indexing `pm8001_ha->phy[phy_id]` with it is therefore safe.
+- **Controller failure is checked first:** the function returns early if the controller is in a fatal error state, before it sends any request to the hardware.
+- **The lock is always released:** in the `PHY_FUNC_GET_EVENTS` branch, both the error return and the normal return unlock the spinlock.
+- **Register reads stay in range:** the offset uses `phy_id & 3`, so it can't go past the four phy register blocks.
+- **The on-stack completion is used safely:** the function waits for it before returning, so the pointer stored in `enable_completion` isn't used after the stack frame is gone.
+
+There is one robustness weakness, but I don't count it as a security bug. The function waits on the completion with no timeout and ignores what `phy_start_req()` returns. If the controller never answers, the caller hangs forever. The JSON's `suggested_fix` recommends `wait_for_completion_timeout()` and checking that return value.
+✔ Report written to results/s227.json

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "dst_buf_info = container_of(fb, struct mtk_video_dec_buf, frame_buffer);",
+      "reason": "get_cap_buffer() can return NULL when no capture buffer is available, but there is no NULL check. container_of() on a NULL fb then gives an invalid pointer (NULL minus the member offset). The later code explicitly allows fb to be NULL ('fb ? ... : 0'), which shows the NULL case is expected but isn't handled when dst_buf_info is computed."
+    },
+    {
+      "statement": "v4l2_m2m_buf_copy_metadata(&src_buf_info->m2m_buf.vb, &dst_buf_info->m2m_buf.vb, true);",
+      "reason": "This dereferences dst_buf_info, which came from a possibly NULL fb, so it reads and writes through an invalid near-NULL pointer and can crash the kernel. The NULL fb would also send a zero/bogus DMA address for the destination to the VPU firmware."
+    }
+  ],
+  "suggested_fix": "Check the return value of get_cap_buffer() right away. If fb is NULL, log an error and return an error code (for example -ENOMEM) before calling container_of() or touching dst_buf_info. After that check, the 'fb ? ... : 0' conditionals can be simplified, since fb is known to be non-NULL."
+}

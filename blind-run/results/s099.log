@@ -1,0 +1,13 @@
+▶ Scanning: samples/s099.c
+▶ Report:   results/s099.json
+I found a vulnerability: **CWE-416, use-after-free from a race condition** in `fastrpc_req_mmap`. The answer is saved to `results/s099.json`. This comes from reading the code only; I didn't build or run anything.
+
+**The problem:** at line 83, `list_add_tail(&buf->node, &fl->mmaps)` puts the buffer on the shared list before the function has finished. After that point, two things can still go wrong:
+- **Concurrent unmap:** another thread can call the unmap request at the same time, find the buffer on the list, and free it while this function is still using it.
+- **Failed copy back to the user (line 86):** if `copy_to_user` fails, the error path calls `fastrpc_req_munmap_impl(fl, buf)` and frees the buffer. If another thread already freed it, that is a use-after-free or a double free.
+- **Debug message (lines 91–92):** the `dev_dbg` line reads `buf->raddr` and `buf->size` after the buffer is already on the list, so it can also read freed memory.
+
+All three statements are listed in the JSON.
+
+**Suggested fix:** add the buffer to the list only after every step that can fail has succeeded, including `copy_to_user`. Then no other thread can see the buffer while this function still owns it, and the error path only frees a buffer that isn't on the list. Also stop using `buf` once it is on the list, or protect it with reference counting.
+✔ Report written to results/s099.json

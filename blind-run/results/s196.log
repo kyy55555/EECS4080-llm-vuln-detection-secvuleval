@@ -1,0 +1,8 @@
+▶ Scanning: samples/s196.c
+▶ Report:   results/s196.json
+I judged `samples/s196.c` not vulnerable and wrote that to `results/s196.json`, with `cwe` set to null and no vulnerable statements listed.
+
+`cougar_report_fixup` only touches four bytes of the report descriptor: `rdesc[2]`, `rdesc[3]`, `rdesc[115]` and `rdesc[116]`. Before reading or writing any of them, it checks that `*rsize >= 117`. Because `&&` stops at the first false test, a descriptor shorter than 117 bytes is never accessed. The two writes only cap the usage count at `HID_MAX_USAGES-1`, inside a buffer already confirmed to be big enough.
+
+Without that length check, a malicious USB device could send a short descriptor and trigger an out-of-bounds read or write (CWE-125/CWE-787). The JSON's `suggested_fix` field notes this and says no change is needed.
+✔ Report written to results/s196.json

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks that *rsize >= 117 before reading or writing rdesc[2], rdesc[3], rdesc[115] and rdesc[116], so every access stays inside the report descriptor buffer. Without that length check, a short descriptor from a malicious device could cause an out-of-bounds read or write (CWE-125/CWE-787)."
+}

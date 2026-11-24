@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "queue->nr_cmds = sq->size * 2;",
+      "reason": "nr_cmds is set before the allocation succeeds. If nvmet_tcp_alloc_cmds() fails, queue->cmds stays NULL while nr_cmds is non-zero. Teardown code such as nvmet_tcp_uninit_data_in_cmds and nvmet_tcp_free_cmds uses nr_cmds to walk queue->cmds, so it dereferences a NULL pointer and crashes the kernel."
+    },
+    {
+      "statement": "if (nvmet_tcp_alloc_cmds(queue))\n\t\treturn NVME_SC_INTERNAL;",
+      "reason": "The error path does not reset queue->nr_cmds, so the queue stays in an inconsistent state (nr_cmds > 0, cmds == NULL). A remote host can trigger this by sending a Connect with a large queue size that makes the allocation fail."
+    }
+  ],
+  "suggested_fix": "Reset the command count when allocation fails, e.g. `if (nvmet_tcp_alloc_cmds(queue)) { queue->nr_cmds = 0; return NVME_SC_INTERNAL; }`. Another option is to set queue->nr_cmds only after the allocation succeeds. Either way, teardown paths never iterate over a NULL cmds array."
+}

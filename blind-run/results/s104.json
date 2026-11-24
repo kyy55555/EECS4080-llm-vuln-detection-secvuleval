@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "WARN_ON(!id_0 && !id_1 && !id_2);",
+      "reason": "The function detects the case where all three IDs are NULL, but it only prints a warning and keeps going. It does not return an error, so execution falls through to the else branch even though id_2 is NULL."
+    },
+    {
+      "statement": "lookup = id_2->data;",
+      "reason": "If id_0, id_1 and id_2 are all NULL (for example, a caller passes a signature with no key IDs), this line dereferences id_2 while it is NULL. That crashes the kernel (denial of service)."
+    },
+    {
+      "statement": "len = id_2->len;",
+      "reason": "This is the same NULL pointer dereference of id_2 as the line above, in the case where no ID was provided."
+    }
+  ],
+  "suggested_fix": "Turn the warning into a real check that exits early: `if (WARN_ON(!id_0 && !id_1 && !id_2)) return ERR_PTR(-EINVAL);`. Then id_2 is never dereferenced when it is NULL. Callers should also check that at least one key ID is present before calling find_asymmetric_key()."
+}

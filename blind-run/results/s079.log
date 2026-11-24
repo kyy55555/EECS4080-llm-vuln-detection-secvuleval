@@ -1,0 +1,14 @@
+▶ Scanning: samples/s079.c
+▶ Report:   results/s079.json
+I marked the function in `samples/s079.c` as **vulnerable** with a use-after-free (CWE-416), and wrote the answer to `results/s079.json`.
+
+**Where it happens:** At line 32, the global, static `cht_dailink[]` array is pointed at `drv->codec_name`. That buffer belongs to `drv`, which is allocated per device with `devm_kzalloc` and freed automatically when the driver is unbound or a probe fails (including a probe deferred until later).
+
+**Why it's a problem:** The static array still holds the pointer after `drv` is freed. On the next probe, the loop at line 21 runs `strcmp` on that freed memory. Because the old name also no longer matches `RT5672_I2C_DEFAULT`, `dai_index` quietly falls back to 0 and the wrong link may be changed.
+
+**Suggested fix (also in the JSON):** Don't keep a pointer to per-device memory in a global structure. Either:
+- find the codec link by something that doesn't change, such as a fixed index or the DAI name; or
+- copy the link arrays for each probe with `devm_kmemdup` and change only that copy.
+
+I also checked `acpi_dev_put(adev)` when `adev` is NULL and didn't treat it as a bug.
+✔ Report written to results/s079.json

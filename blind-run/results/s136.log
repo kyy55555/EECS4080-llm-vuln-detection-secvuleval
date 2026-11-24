@@ -1,0 +1,15 @@
+▶ Scanning: samples/s136.c
+▶ Report:   results/s136.json
+I marked `smb2_open` in `samples/s136.c` as vulnerable: a NULL pointer dereference (CWE-476). The answer is saved to `results/s136.json`.
+
+**The flaw:** The client sets the requested oplock level. If it asks for a lease (`SMB2_OPLOCK_LEVEL_LEASE`) but sends no lease create context, `parse_lease_state(req)` returns NULL, so `lc` is NULL.
+- The lease branch (around line 606) only checks the requested oplock level, not whether `lc` is NULL.
+- It then uses `lc` directly in `lc->req_state &= ...` (line 608, for directories) and in `smb2_map_lease_to_oplock(lc->req_state)` (line 619).
+- It also passes the NULL `lc` to `smb_send_parent_lease_break_noti` and `find_same_lease_key`.
+
+The effect is that one crafted SMB2 CREATE request from a logged-in remote client can crash the kernel.
+
+**Suggested fix:** Change the condition to `req_op_level == SMB2_OPLOCK_LEVEL_LEASE && lc`. When the lease context is missing, either fall back to a non-lease oplock or reject the request as an invalid parameter.
+
+**How sure I am:** This is fairly likely but not certain. The finding assumes `parse_lease_state` returns NULL when there is no lease context, and that function isn't in this file, so I couldn't check it. I also checked the other usual risk spots in this function: the size checks on the EA, POSIX and allocation-size contexts, the symlink check, the durable-handle reconnect path, and the permission checks. They all looked correctly bounded.
+✔ Report written to results/s136.json

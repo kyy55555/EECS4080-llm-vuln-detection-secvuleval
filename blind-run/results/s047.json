@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function flushes the serdev write buffer, purges the TX queue, waits for pending TX work with cancel_work_sync(), and frees rx_skb only after checking it with IS_ERR_OR_NULL(). That check matters because h4_recv_buf() can leave an ERR_PTR value in rx_skb. The pointer is then reset to NULL, so it cannot be freed twice or used after it is freed."
+}

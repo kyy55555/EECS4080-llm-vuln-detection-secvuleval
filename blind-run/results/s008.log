@@ -1,0 +1,10 @@
+▶ Scanning: samples/s008.c
+▶ Report:   results/s008.json
+I rated `axg_card_add_tdm_loopback` in `samples/s008.c` as not vulnerable and wrote that to `results/s008.json`.
+
+- **No stale pointers:** `pad` and `lb` point into the link array, and they are taken only after `meson_card_reallocate_links()` has resized it. Neither can point to freed memory.
+- **Failed allocations are handled:** both `devm_kasprintf()` (the link name) and `devm_kzalloc()` (the CPU component) are checked for NULL before use. If either fails, the function returns `-ENOMEM`. I believe the name check was added in an earlier kernel fix for a NULL pointer dereference; this version already has it.
+- **Node reference count is balanced:** `of_node_get()` adds the reference that `axg_card_clean_references()` releases later. No error path follows that call, so the reference can't leak.
+
+One caveat: `meson_card_reallocate_links()` is defined in another file, which I wasn't allowed to read. My verdict assumes it returns non-zero on failure and leaves the arrays usable. If that helper mishandles a failed reallocation, the bug would be in the helper, not in this function.
+✔ Report written to results/s008.json

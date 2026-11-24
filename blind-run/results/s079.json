@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "cht_dailink[dai_index].codecs->name = drv->codec_name;",
+      "reason": "The global, static cht_dailink[] array is made to point at drv->codec_name, which lives in devm_kzalloc'd memory tied to this device. When probe fails later or the driver is unbound, devm frees drv, but the static dai link still points at the freed buffer. On the next probe, the loop at the top reads that freed pointer."
+    },
+    {
+      "statement": "!strcmp(cht_dailink[i].codecs->name, RT5672_I2C_DEFAULT)) {",
+      "reason": "On a re-probe (after unbind/rebind or after an earlier deferred/failed probe), codecs->name still points at the freed drv->codec_name from the previous instance, so strcmp reads freed memory (use-after-free). The stale name also no longer matches the default, so dai_index silently falls back to 0 and the wrong link may be patched."
+    }
+  ],
+  "suggested_fix": "Do not store a pointer to per-device devm memory in a static/global structure. Either find the codec DAI link by a stable property (e.g. a fixed index or comparing the DAI name instead of the mutable codec name), or reset cht_dailink[dai_index].codecs->name back to the static default on remove and on probe failure. A cleaner option is to devm_kmemdup() the dai_link/codec arrays per probe so each card instance owns its own copy, and only change that copy."
+}

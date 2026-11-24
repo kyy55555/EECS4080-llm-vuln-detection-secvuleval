@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "if (!bridge_dev && !bridge_dev->parent)",
+      "reason": "The check uses '&&' where '||' is needed. If pci_get_host_bridge_device() returns NULL, the first operand is true, so the code then reads bridge_dev->parent and dereferences a NULL pointer. If bridge_dev is non-NULL but its parent is NULL, the check passes, and dev_get_drvdata(bridge_dev->parent) is then called with a NULL device."
+    }
+  ],
+  "suggested_fix": "Change the condition to 'if (!bridge_dev || !bridge_dev->parent) return;' so the function returns early when either pointer is NULL. Also, pci_get_host_bridge_device() takes a reference, so release it with pci_put_host_bridge_device(bridge_dev) on every exit path after the lookup."
+}

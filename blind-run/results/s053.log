@@ -1,0 +1,10 @@
+▶ Scanning: samples/s053.c
+▶ Report:   results/s053.json
+I judged the function vulnerable (CWE-476, NULL/invalid pointer dereference) and wrote the answer to `results/s053.json`.
+
+**The problem:** at the top of the function (`samples/s053.c:5-6`), `dec_params` is set from `mtk_vdec_h264_get_ctrl_ptr()`. That call can fail and return an error pointer, but the result is never checked. At line 53 the code reads `dec_params->nal_ref_idc` and `dec_params->flags` anyway. If the lookup failed, that is an invalid memory access and the kernel crashes.
+
+This rests on one assumption I couldn't check from this file alone: that `mtk_vdec_h264_get_ctrl_ptr()` can return an error pointer. Its code isn't in this sample. I based this on how I remember the upstream Linux driver, which checks this return value.
+
+**Suggested fix:** get `dec_params` after the flush check (`if (!bs)`), and add `if (IS_ERR(dec_params)) return PTR_ERR(dec_params);` before it is used.
+✔ Report written to results/s053.json

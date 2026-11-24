@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "if (shadow->tbo.resource->mem_type != TTM_PL_TT ||",
+      "reason": "The shadow BO's TTM resource can be NULL (e.g. the BO was evicted or its backing was released, which TTM allows). The code dereferences shadow->tbo.resource without checking it, so a NULL pointer dereference can happen during GPU reset / VRAM recovery."
+    },
+    {
+      "statement": "shadow->parent->tbo.resource->mem_type != TTM_PL_VRAM)",
+      "reason": "The parent BO's resource is also dereferenced without a NULL check, so the same NULL pointer dereference can happen if the parent has no backing resource."
+    }
+  ],
+  "suggested_fix": "Before reading mem_type/start, check that shadow->tbo.resource (and shadow->parent->tbo.resource) are non-NULL. If either is NULL, skip the BO with 'continue', the same way evicted BOs are skipped. For example: if (!shadow->tbo.resource || shadow->tbo.resource->mem_type != TTM_PL_TT || ... || !shadow->parent->tbo.resource || shadow->parent->tbo.resource->mem_type != TTM_PL_VRAM) continue;"
+}

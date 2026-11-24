@@ -1,0 +1,12 @@
+▶ Scanning: samples/s107.c
+▶ Report:   results/s107.json
+I wrote `results/s107.json`. My verdict is that this function is **not vulnerable**, so `cwe` is null and `vulnerable_statements` is empty.
+
+The main things I checked in `samples/s107.c`:
+
+- **Directory name buffer (lines 27–37):** The buffer is sized from `mangle_name(..., NULL)`, the length of `".%ld"` for the namespace's `uniq_id`, and 1 byte for the terminator. The `sprintf` then writes that same `uniq_id` value, because the `++` only takes effect after it is read. The write therefore fits the buffer exactly, so there is no overflow.
+- **Raw-data symlinks (lines 72–96):** These store the reference-counted `profile->label.proxy`, not a raw pointer to `profile->rawdata`. Each one takes a reference with `aa_get_proxy` only after the symlink was created successfully. This avoids the use-after-free that comes from pointing at rawdata that can be replaced.
+- **Error handling:** Every failure path goes to `fail` or `fail2`, which call `__aafs_profile_rmdir(profile)` to clean up. Errors from child profiles are passed back up, and a failed allocation returns `-ENOMEM`.
+
+I only looked at this one file, so the conclusion assumes the helpers it calls (`mangle_name`, `aafs_create`, `__aafs_profile_rmdir`) behave as their names and usage suggest.
+✔ Report written to results/s107.json

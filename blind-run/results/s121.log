@@ -1,0 +1,10 @@
+▶ Scanning: samples/s121.c
+▶ Report:   results/s121.json
+I found no vulnerability in this function and wrote that verdict to `results/s121.json`.
+
+`pmic_glink_send()` takes `pg->state_lock`, checks that `pg->ept` is not NULL, and only then calls `rpmsg_send()`. If the endpoint is missing it returns `-ECONNRESET`. The lock covers both the check and the send, so another thread can't clear or free the endpoint in between.
+
+This looks like the already-fixed version of the function. An unprotected version that called `rpmsg_send(client->pg->ept, …)` directly would have a race and a possible NULL-pointer dereference while the device is being removed.
+
+One assumption: the code that tears down the endpoint isn't in this file. The verdict relies on that code clearing `pg->ept` while holding the same `state_lock`, which is the usual pattern in this driver.
+✔ Report written to results/s121.json

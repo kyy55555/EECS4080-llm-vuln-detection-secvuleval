@@ -1,0 +1,11 @@
+▶ Scanning: samples/s132.c
+▶ Report:   results/s132.json
+I wrote `results/s132.json` with the verdict **not vulnerable**, so `cwe` is null and `vulnerable_statements` is empty.
+
+**Why:** `wbscl_set_scaler_filter` loops over `NUM_PHASES/2 + 1` phases and `(taps+1)/2` tap pairs. It reads the filter table at `phase * taps + 2*pair` and, for odd taps, at `+1`.
+- **Even coefficient:** the index always stays below `(NUM_PHASES/2 + 1) * taps`, which is the size of a filter table built for that tap count.
+- **Odd coefficient:** it is read only when `(pair*2 + 1) < taps`, so an odd tap count can't read past the end of the table.
+- **Registers:** the values written come from the coefficient table, not from user input.
+
+**What I couldn't check:** the function gets no table length, so it relies on the caller to pass a table that matches `taps`. I only read this file, so I couldn't confirm the caller does that. If a mismatched table were passed, the reads would go out of bounds. The suggested fix in the JSON therefore describes optional hardening: pass the table length and check it against `taps` before the loop.
+✔ Report written to results/s132.json

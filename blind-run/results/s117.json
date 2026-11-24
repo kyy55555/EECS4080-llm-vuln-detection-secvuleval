@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The root-growing loop resets new_node->children[0] to NULL when cmpxchg_release loses the race, so a reused or freed spare node never holds a stale child pointer. The descent loop uses cmpxchg_release plus swap() so that only one node is installed per slot, and any unused spare is freed at the end. Offsets are masked at each level, so indexing stays within the node's bounds."
+}

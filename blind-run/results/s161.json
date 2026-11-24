@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "ep = lookup_atid(t, atid);",
+      "reason": "The atid comes from a CPL_ACT_ESTABLISH message sent by the hardware/firmware. lookup_atid() can return NULL if the atid is invalid, stale or already freed, and the return value is never checked."
+    },
+    {
+      "statement": "mutex_lock(&ep->com.mutex);",
+      "reason": "ep is dereferenced without a NULL check, so a NULL ep from lookup_atid() causes a NULL pointer dereference and kernel crash (DoS). Later uses such as ep->dst and ep->hwtid have the same problem."
+    }
+  ],
+  "suggested_fix": "Check the result of lookup_atid() right after the call. If ep is NULL, log a warning (e.g. pr_warn(\"%s cannot find ep for atid %u\\n\", __func__, atid)) and return early without touching ep. Optionally also check that atid is in range before the lookup."
+}

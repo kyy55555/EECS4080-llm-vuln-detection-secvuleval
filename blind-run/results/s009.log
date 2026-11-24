@@ -1,0 +1,9 @@
+▶ Scanning: samples/s009.c
+▶ Report:   results/s009.json
+I judged `padata_do_serial` in `samples/s009.c` to be **not vulnerable** and wrote that to `results/s009.json`.
+
+- **List insertion is correct:** the loop walks the list with a plain `list_head` cursor (`pos`). If no smaller sequence number is found, `pos` ends on the list head, so `list_add` puts the item at the front of the list. An older version of this function had a known bug here: after the loop, its cursor could point to a fake entry built from the list head, and the insert used it anyway. This version doesn't have that bug.
+- **Locking and ordering are fine:** the list is only changed while holding `reorder->lock`. The `smp_mb()` before `padata_reorder(pd)` pairs with the matching memory barrier in `padata_reorder`, as the comment says.
+
+There is one thing I can't rule out from this file alone. This kernel subsystem has had use-after-free bugs where `pd` was freed while still being handled after this function calls `padata_reorder(pd)`. Whether that applies here depends on the reference counting in `padata_reorder` and its worker, which aren't in this file. I didn't count it as a flaw in this function.
+✔ Report written to results/s009.json

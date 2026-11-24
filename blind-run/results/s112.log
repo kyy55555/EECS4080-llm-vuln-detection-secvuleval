@@ -1,0 +1,8 @@
+▶ Scanning: samples/s112.c
+▶ Report:   results/s112.json
+I've written the verdict to `results/s112.json`: the function is vulnerable to an out-of-bounds read (CWE-125).
+
+**The problem (`samples/s112.c:7`):** `fb_channel_number` is a value read from a hardware register through `get_fb_channel_number()`. The function uses it directly as an index into the fixed-size array `df_v1_7_channel_number` without checking it. If the register returns a value that is too large, or one that becomes negative when stored in the signed `int`, the read goes past the end of the array.
+
+**Suggested fix:** Before indexing, check that the value is not negative and is less than `ARRAY_SIZE(df_v1_7_channel_number)`. If it fails the check, fall back to a safe default such as index 0. Declaring the variable as unsigned would also rule out negative values.
+✔ Report written to results/s112.json

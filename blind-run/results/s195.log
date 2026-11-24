@@ -1,0 +1,14 @@
+▶ Scanning: samples/s195.c
+▶ Report:   results/s195.json
+I marked `samples/s195.c` as **not vulnerable** and wrote the answer to `results/s195.json`.
+
+The function is a user-space kernel self-test (`close_range_bitmap_corruption`), not kernel code. Here is what it does:
+1. Opens file descriptors 2 to 127.
+2. Creates a child process that shares the parent's descriptor table.
+3. In the child, calls `close_range(64, ~0U, CLOSE_RANGE_UNSHARE)` so the child gets its own copy of the table with descriptors 64 and up closed.
+4. Checks that `dup(0)` then returns 64. If it doesn't, the kernel's internal record of which descriptors are in use is wrong.
+
+The test only makes system calls and checks their results, so it contains no memory-safety or logic flaw of its own. It exists to catch a kernel bug of that kind.
+
+One line looks wrong but isn't: `EXPECT_EQ(dup(0), 64)` has no semicolon before `exit(EXIT_FAILURE);`. The kselftest check macros let you put a statement right after them that runs only when the check fails, so this is valid code.
+✔ Report written to results/s195.json

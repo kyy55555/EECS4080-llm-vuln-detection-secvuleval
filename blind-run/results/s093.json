@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix needed. The function logs an error using the request's start device and passes the ERP to dasd_3990_erp_cleanup with DASD_CQR_FAILED. It does no indexing, copying or arithmetic on untrusted input, and its pointer use (erp->startdev->cdev) follows the standard DASD ERP pattern where these fields are always valid."
+}

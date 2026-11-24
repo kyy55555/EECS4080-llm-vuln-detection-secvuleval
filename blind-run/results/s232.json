@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function NULL-checks block, block->base and the discipline's is_ese callback before calling it, and checks that dasd_get_sense() returned a sense buffer before reading sense[1]. It also treats 'no record found', 'file protected' and 'incorrect length' as signs that an unformatted track on a thin-provisioned (ESE) device needs formatting, so those I/O errors are not mishandled."
+}

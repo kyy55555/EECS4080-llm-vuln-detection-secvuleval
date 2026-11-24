@@ -1,0 +1,13 @@
+▶ Scanning: samples/s039.c
+▶ Report:   results/s039.json
+I judged `padata_do_serial` in `samples/s039.c` **not vulnerable** and wrote that to `results/s039.json`, with `cwe` set to null and no vulnerable statements.
+
+Why it looks safe:
+- **Which list it uses:** it picks the reorder list from the item's sequence number (`padata_cpu_hash(pd, padata->seq_nr)`), not from whichever CPU happens to be running. Every item therefore lands on the same list that the reordering code later reads.
+- **Locking:** the item is added to that list while holding `reorder->lock`.
+- **Where it is inserted:** the loop walks the list with a plain list pointer (`list_for_each_prev` with `pos`). If the loop finishes without finding a match, `pos` points back at the list head, so `list_add` simply puts the item at the front. It never uses a bogus entry pointer computed from the list head.
+- **Sequence-number wrap-around:** it compares the signed difference of the two numbers, which stays correct when the counter wraps.
+- **Memory ordering:** the `smp_mb()` is there and pairs with the barrier in `padata_reorder`, as the comment says.
+
+One possible concern I can't settle from this file alone: once the lock is released, another CPU could finish processing the item and drop the last reference to `pd`. That would make the closing `padata_reorder(pd)` call a use-after-free. Whether that can happen depends on reference counting in `padata_reorder` and the code around it, which I couldn't see. I left it out of the answer because nothing in this function shows the bug.
+✔ Report written to results/s039.json

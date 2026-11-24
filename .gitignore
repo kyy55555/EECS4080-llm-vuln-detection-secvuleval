@@ -1,0 +1,12 @@
+# Python environment and IDE settings
+.venv/
+.idea/
+__pycache__/
+.DS_Store
+
+# Papers and course documents (contain personal information or third-party content)
+*.pdf
+
+# Earlier NVD pilot and the original, unmodified skills
+/_archive_old/
+/.claude/

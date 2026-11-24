@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The tail-handling loop bounds each memcpy with min_t(int, 4, remaining - j), so it never reads past op->data.nbytes from the caller's TX buffer (the unbounded 4-byte memcpy that would over-read a non-4-aligned tail is not present). The 8-byte main loop only iterates over ALIGN_DOWN(nbytes, 8), so its u32 reads also stay in bounds. Optionally, reset 'data' to 0 before each memcpy so stale bytes from a previous word are not pushed into the FIFO padding."
+}

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "memcpy(pmk_op->pmk[0].bssid, pmksa->bssid, ETH_ALEN);",
+      "reason": "cfg80211 can pass a pmksa whose bssid is NULL. For example, nl80211 del_pmksa can identify the entry by SSID and cache ID, or by PMKID alone, without giving a BSSID. The function copies from pmksa->bssid without checking it, so it dereferences a NULL pointer and crashes the kernel."
+    },
+    {
+      "statement": "memcpy(pmk_op->pmk[0].pmkid, pmksa->pmkid, WLAN_PMKID_LEN);",
+      "reason": "The PMKID attribute is optional for PMKSA delete requests, so pmksa->pmkid can be NULL. It is copied without a check, which dereferences a NULL pointer. A user who holds CAP_NET_ADMIN can trigger this through nl80211."
+    }
+  ],
+  "suggested_fix": "Check each optional field before copying it. Copy the BSSID only if pmksa->bssid is non-NULL. Copy the PMKID and set pmkid_len = WLAN_PMKID_LEN only if pmksa->pmkid is non-NULL; otherwise leave pmkid_len at 0 so the firmware matches on the fields that were supplied. If an operation needs a field that is missing, return -EINVAL instead of dereferencing the pointer."
+}

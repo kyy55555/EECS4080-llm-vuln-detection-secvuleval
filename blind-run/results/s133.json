@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "list_for_each_entry(mirror_adev, &hive->device_list, gmc.xgmi.head) {",
+      "reason": "amdgpu_get_xgmi_hive() can return NULL (e.g., the device is not part of an XGMI hive, or allocating or initializing the hive fails). The result is used without a NULL check, so reading hive->device_list dereferences a NULL pointer and crashes the kernel."
+    }
+  ],
+  "suggested_fix": "Check the return value of amdgpu_get_xgmi_hive() right after calling it, and return early if it is NULL (for example: if (!hive) return;). This skips both the list walk and the amdgpu_put_xgmi_hive() call when no hive reference was taken."
+}

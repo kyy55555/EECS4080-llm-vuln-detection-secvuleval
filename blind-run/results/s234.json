@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "free_netdev(dev);",
+      "reason": "The driver's private data (embedded in the net_device) contains a timer (priv(dev)->timer, handler ether3_ledoff) armed during transmit. ether3_remove frees the net_device without first cancelling/shutting down that timer, so a pending or concurrently running timer callback can dereference the freed dev/priv, causing a use-after-free race."
+    }
+  ],
+  "suggested_fix": "Before freeing the net_device, ensure the timer can no longer run: e.g. call timer_shutdown_sync(&priv(dev)->timer) (or del_timer_sync) after unregister_netdev(dev) and before free_netdev(dev). This guarantees any pending timer is cancelled and any running handler has completed before the memory is released."
+}

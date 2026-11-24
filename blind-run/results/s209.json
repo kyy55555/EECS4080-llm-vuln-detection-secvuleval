@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function holds ub->mutex for the whole operation. It rejects devices that do not support recovery or whose queues were never made ready (nr_queues_ready == 0), which prevents reinitializing queues that were never set up. It allows recovery only when the device file is closed and the device is in the QUIESCED state. Only after these checks does it reinitialize the queues and reset the per-daemon state (mm, nr_queues_ready, nr_privileged_daemon, completion)."
+}

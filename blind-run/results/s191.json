@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-401",
+  "vulnerable_statements": [
+    {
+      "statement": "rule = vcap_alloc_rule(&test_vctrl, &test_netdev, vcap_chain_id, user,\n\t\t\t       priority, id);",
+      "reason": "The rule is heap-allocated here (along with its key and action field lists). vcap_add_rule() stores its own duplicate in the admin rule list, and vcap_del_rule() frees only that stored copy. The test never calls vcap_free_rule() on the original rule, so the rule and all its key/action field allocations leak each time the test runs."
+    },
+    {
+      "statement": "ret = vcap_del_rule(&test_vctrl, &test_netdev, id);",
+      "reason": "This deletes only the copy that the VCAP admin holds. The caller's locally allocated rule still exists and is never released before the function returns."
+    }
+  ],
+  "suggested_fix": "Free the locally allocated rule before the function returns by calling vcap_free_rule(rule) after vcap_del_rule(). This releases the rule and its key and action field lists. Ideally, also stop the test early (for example with KUNIT_ASSERT_PTR_NE instead of KUNIT_EXPECT_PTR_NE) if the allocation fails, so the test never dereferences a NULL rule."
+}

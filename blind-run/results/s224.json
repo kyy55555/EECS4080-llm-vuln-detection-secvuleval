@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "kref_put(&nport->ref, nport->release);",
+      "reason": "The reference on the nport is dropped before it is used. If this was the last reference, nport->release frees the nport object, and the following efc_sm_post_event(&nport->sm, ...) then reads freed memory (use-after-free)."
+    },
+    {
+      "statement": "efc_sm_post_event(&nport->sm, EFC_EVT_SHUTDOWN, NULL);",
+      "reason": "This accesses nport->sm after kref_put() may already have freed the nport."
+    }
+  ],
+  "suggested_fix": "Post the shutdown event first and drop the reference afterwards: call efc_sm_post_event(&nport->sm, EFC_EVT_SHUTDOWN, NULL) and then kref_put(&nport->ref, nport->release). This keeps the nport alive while the state machine uses it. Another option is to take an extra reference around the event post."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function re-checks i_count under inode->i_lock after the lockless pre-check, so a concurrent find_inode()/iput() cannot grab a reference between the check and setting I_FREEING. It also skips I_NEW/I_FREEING/I_WILL_FREE inodes, removes the inode from the LRU while holding i_lock, and drops s_inode_list_lock before rescheduling and disposing, then restarts the walk."
+}

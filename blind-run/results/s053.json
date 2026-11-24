@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "const struct v4l2_ctrl_h264_decode_params *dec_params =\n\t\tmtk_vdec_h264_get_ctrl_ptr(inst->ctx, V4L2_CID_STATELESS_H264_DECODE_PARAMS);",
+      "reason": "mtk_vdec_h264_get_ctrl_ptr() can fail and return an ERR_PTR (control not found / not set), but the return value is never checked with IS_ERR()."
+    },
+    {
+      "statement": "data[1] = (dec_params->nal_ref_idc << 5) |",
+      "reason": "dec_params is dereferenced without validation; if the control lookup failed, this dereferences an error pointer, causing an invalid memory access / kernel oops."
+    }
+  ],
+  "suggested_fix": "Fetch the decode params after the flush (bs == NULL) check and validate the result: `dec_params = mtk_vdec_h264_get_ctrl_ptr(...); if (IS_ERR(dec_params)) return PTR_ERR(dec_params);` before any dereference of dec_params."
+}

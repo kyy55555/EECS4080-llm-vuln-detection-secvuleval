@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The error paths after aac_comm_init() and aac_fib_setup() failures free dev->queues and immediately set it to NULL, so a caller's later cleanup (e.g. kfree(aac->queues) in the probe error path) cannot double-free it. As a hardening measure, the values the adapter reports (status[1..4]) could be range-checked before they are used to size max_fib_size, sg_tablesize and can_queue."
+}

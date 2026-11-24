@@ -1,0 +1,10 @@
+▶ Scanning: samples/s100.c
+▶ Report:   results/s100.json
+I wrote the result to `results/s100.json`. My verdict is that `nbd_xmit_timeout` in `samples/s100.c` is **not vulnerable**, so `cwe` is null and `vulnerable_statements` is empty.
+
+- **Config handling:** it gets the config through `nbd_get_config_unlocked()`, handles the case where none is returned (lines 15–21), and calls `nbd_config_put()` on every path that took a reference.
+- **Index check:** in the multi-connection path, `cmd->index` is checked against `config->num_connections` before `config->socks[cmd->index]` is read (line 36).
+- **Locking:** `cmd->lock` is taken with a trylock, `nsock->tx_lock` is held around the cookie comparison, and every path releases the locks.
+
+One spot is weaker, though I didn't count it as a vulnerability. The `timeout == 0` path at line 62 reads `config->socks[cmd->index]` without checking that `config->socks` is non-NULL or that the index is in range. I believe a request that is still in flight can only exist once sockets are set up, but I couldn't confirm that from this one file. The suggested fix in the JSON adds those two checks as extra protection.
+✔ Report written to results/s100.json

@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-125",
+  "vulnerable_statements": [
+    {
+      "statement": "ucode = &adev->firmware.ucode[id];",
+      "reason": "fw_type_convert() returns AMDGPU_UCODE_ID_MAXIMUM for unrecognized cgs_ucode_id values, and that id is used directly to index adev->firmware.ucode[] (sized AMDGPU_UCODE_ID_MAXIMUM) without a bounds check. The subsequent read of ucode->fw is then an out-of-bounds read past the end of the array."
+    },
+    {
+      "statement": "if (ucode->fw == NULL)",
+      "reason": "Dereferences the possibly out-of-bounds ucode pointer; if the garbage value is non-NULL, the code goes on to dereference ucode->fw->data as a firmware header, which is also out of bounds."
+    }
+  ],
+  "suggested_fix": "Validate the converted id before indexing: after id = fw_type_convert(cgs_device, type), add 'if (id >= AMDGPU_UCODE_ID_MAXIMUM) return -EINVAL;' so unknown ucode types are rejected instead of indexing past the end of adev->firmware.ucode[]."
+}

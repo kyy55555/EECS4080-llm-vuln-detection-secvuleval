@@ -1,0 +1,17 @@
+▶ Scanning: samples/s224.c
+▶ Report:   results/s224.json
+I wrote the verdict to `results/s224.json`: the function is vulnerable to a use-after-free (CWE-416).
+
+**The bug:** inside the loop over `domain->nport_list`, the function drops its reference to the nport before it has finished using it:
+
+```c
+kref_put(&nport->ref, nport->release);
+efc_sm_post_event(&nport->sm, EFC_EVT_SHUTDOWN, NULL);
+```
+
+If that was the last reference, `nport->release` frees the nport. The next line then uses `nport->sm`, which is now freed memory.
+
+**Suggested fix:** swap the two lines so the shutdown event is posted first and `kref_put()` comes after. Another option is to hold an extra reference while the event is posted.
+
+The first loop over the vport list looks fine. It uses `list_for_each_entry_safe` and stops right after the `kfree`, so nothing is used after it is freed.
+✔ Report written to results/s224.json

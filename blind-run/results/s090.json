@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The codec-DAI lookup checks that cht_dailink[i].codecs->name is non-NULL before calling strcmp, so it cannot dereference a NULL pointer. The ACPI device reference from acpi_dev_get_first_match_dev() is released with acpi_dev_put(), which is NULL-safe. snprintf limits the write to the size of drv->codec_name. Every error path returns properly, and the allocations are devm-managed. To harden it further, the overridden codec name could be stored in a static buffer instead of devm memory, so the global cht_dailink table never keeps a pointer to freed memory after the driver unbinds."
+}

@@ -1,0 +1,11 @@
+▶ Scanning: samples/s046.c
+▶ Report:   results/s046.json
+I've written the answer to `results/s046.json`. I marked the function as vulnerable, with CWE-416 (use-after-free). This is a judgement from reading the code: I didn't compile, run or test anything.
+
+The problem is in the error path that runs after the bio has been split, at `samples/s046.c:91-96`:
+
+- **`btrfs_cleanup_bio(bbio);`** frees the split piece directly instead of finishing it the normal way. That drops its references, including the I/O context reference the function had just added to the write-tracking (ordered extent) list. The list can still point to it, so it can be used after it's freed.
+- **`btrfs_bio_end_io(orig_bbio, ret);`** reports the error on the original bio, which is the leftover part that was never submitted, not the piece that actually failed. The failed piece never goes through its normal finish step, so the reference counts on the two parts get out of step. That opens the way to a use-after-free when the finish steps run.
+
+**Suggested fix:** don't free the split piece directly. After `btrfs_bio_counter_dec()`, if the bio was split, end both the leftover original bio and the current split piece with `btrfs_bio_end_io(..., ret)`. Then both go through the normal finish step and each reference is dropped exactly once.
+✔ Report written to results/s046.json

@@ -1,0 +1,13 @@
+▶ Scanning: samples/s057.c
+▶ Report:   results/s057.json
+I've written the verdict to `results/s057.json`: **vulnerable, CWE-476 (NULL pointer dereference)**. I'm only moderately confident, because the call to a NULL pointer depends on code outside this file.
+
+**The suspect line:** `struct mt792x_dev *dev = mvif->phy->dev;` (`samples/s057.c:6`). The function reaches the device through the per-interface `mvif->phy` pointer and never checks it. If this callback runs while the interface is still being set up or is being torn down, `mvif->phy` may be NULL, and the kernel would crash. Nothing in this file shows that `phy` is always set at that point. I'm partly relying on my memory of a similar upstream fix, which I didn't look up because the task said to work only from this file.
+
+**What looks safe:**
+- The address-copy loop stops at `IEEE80211_BSS_ARP_ADDR_LIST_LEN`, so `ns_addrs[]` can't overflow.
+- The address list is read under `read_lock_bh`.
+- The `skb` is allocated with exactly enough room for the addresses added to it.
+
+**Suggested fix:** get the device from `hw` instead (`mt792x_hw_dev(hw)`), which is always valid while the callback is registered. The alternative is to check `mvif->phy` and return early if it's NULL.
+✔ Report written to results/s057.json

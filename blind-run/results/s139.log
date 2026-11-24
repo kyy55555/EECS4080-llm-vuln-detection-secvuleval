@@ -1,0 +1,10 @@
+▶ Scanning: samples/s139.c
+▶ Report:   results/s139.json
+I marked the function in `samples/s139.c` as vulnerable (CWE-119) and wrote the result to `results/s139.json`, but my confidence is low.
+
+**The finding:** at `samples/s139.c:39`, `amdgpu_bo_pin(rbo, domain)` pins the framebuffer without first requiring it to sit in one continuous block of graphics memory (VRAM). Display hardware reads the framebuffer as a single continuous range starting at the address set at line 58 (`afb->address = amdgpu_bo_gpu_offset(rbo)`). If the buffer is split across separate pieces of VRAM, the display engine could read memory that belongs to other buffers, and in some modes write to it.
+
+**Suggested fix:** set `rbo->flags |= AMDGPU_GEM_CREATE_VRAM_CONTIGUOUS` before the pin call, or use a pin function that guarantees the buffer stays in one block.
+
+**Why confidence is low:** the error handling and reference counting in this function look correct, and I found no other likely flaw. The contiguity flag is a fix I partly remember from upstream, not something I can confirm from this file alone. Whether this is a real bug depends on whether `amdgpu_bo_pin` already enforces contiguity in this kernel version. If it does, the function is probably not vulnerable.
+✔ Report written to results/s139.json

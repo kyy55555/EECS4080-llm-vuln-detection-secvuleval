@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "list_for_each_entry(tmp_adev, &hive->device_list, gmc.xgmi.head) {",
+      "reason": "hive comes from amdgpu_get_xgmi_hive(), which can return NULL (e.g. allocation or kobject init failure, or the hive not set up yet). The XGMI branch only checks !amdgpu_sriov_vf(adev) and num_physical_nodes > 1, never that hive is non-NULL, so &hive->device_list dereferences a NULL pointer and crashes the kernel during GPU recovery."
+    }
+  ],
+  "suggested_fix": "Add a NULL check for hive before using it in the XGMI branch, e.g. `if (!amdgpu_sriov_vf(adev) && adev->gmc.xgmi.num_physical_nodes > 1 && hive)`. Another option is to bail out with an error (going to end_reset) when a multi-node XGMI device has no hive, so recovery doesn't fall back to resetting only one device."
+}

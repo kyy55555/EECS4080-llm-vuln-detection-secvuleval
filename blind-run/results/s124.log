@@ -1,0 +1,13 @@
+▶ Scanning: samples/s124.c
+▶ Report:   results/s124.json
+I judged `pmic_glink_altmode_probe` in `samples/s124.c` to be **not vulnerable**, and wrote that to `results/s124.json` (`is_vulnerable: false`, `cwe: null`, no vulnerable statements).
+
+Why:
+- **Array index is checked:** the `port` value read from the device tree is checked against `ARRAY_SIZE(altmode->ports)` before it is used as an index (line 36). A port defined twice is rejected (line 41).
+- **References are released:** every early return calls `fwnode_handle_put(fwnode)` first, so the child node reference isn't leaked. The mux, retimer and switch handles are each released through a `devm_add_action_or_reset` cleanup action.
+- **Bridges are added only after setup:** the display bridges are allocated inside the loop but added only after every port is fully set up (lines 108–116). I believe this split is how upstream fixed an earlier use-after-free in this driver. I recalled that history rather than checking it, since I worked only from this file.
+
+One small issue, not a security bug: line 31 prints `fwnode` with `%pOFn`, which expects a different structure type, so the error message may print the wrong thing. `%pfwP` is the matching format, and I noted that in the suggested fix.
+
+Some risk is outside what this file shows: if the work items started here could still run after the driver is removed, the problem would be in code I can't see.
+✔ Report written to results/s124.json

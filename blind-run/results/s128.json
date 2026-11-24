@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks that the q_vector exists before using it, detaches the Tx/Rx rings' back-pointers before freeing, deletes NAPI only when a netdev exists, frees the MSI-X IRQ only when one was allocated and is not shared with other VF control VSIs, then frees the q_vector and clears the array slot to prevent dangling references."
+}

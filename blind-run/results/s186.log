@@ -1,0 +1,10 @@
+▶ Scanning: samples/s186.c
+▶ Report:   results/s186.json
+I've written `results/s186.json`. My verdict is that the function is vulnerable, with a use-after-free (CWE-416) caused by a race condition.
+
+**Why:** The function adds `kirqfd` to the global `irqfds_list` and then releases `irqfds_lock` at line 55. After that it still uses the object in `vfs_poll(f.file, &kirqfd->pt)` (line 61) and `irqfd_inject(kirqfd)` (line 63). Once the object is in the list, another thread can find it. If that thread runs a deassign on the same eventfd at the same time, or the eventfd shutdown fires from an EPOLLHUP, it can remove and free `kirqfd` while this function is still using it. Nothing in this function stops two ioctl calls from running at once, so the free can happen in that window.
+
+**Suggested fix:** Keep the object from being freed while this function is still using it. One way is to hold an SRCU read lock from just before `list_add_tail` until after the poll and inject calls, and have the shutdown/deassign path call `synchronize_srcu()` before freeing. Another way is to finish all setup, including the initial poll, before adding the object to the list.
+
+I only looked at this file, as instructed. The race depends on how deassign and shutdown free the object, and that code isn't in this file. `irqfd->size` comes from userspace and goes straight into `kzalloc` and `copy_from_user`. I didn't list it as a vulnerability on the assumption that the caller checks the size, which I couldn't verify here.
+✔ Report written to results/s186.json

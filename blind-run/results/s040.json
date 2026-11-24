@@ -1,0 +1,11 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-476",
+  "vulnerable_statements": [
+    {
+      "statement": "return sk->sk_user_data;",
+      "reason": "sk_user_data is an RCU-protected pointer. The UDP tunnel release path (udp_tunnel_sock_release) can clear it while GRO receive/complete callbacks (fou_gro_receive, fou_gro_complete, gue_gro_receive) are still running under RCU. Reading it as a plain load gives no RCU annotation or ordering, and the function never signals that the result can be NULL. Callers then dereference the returned struct fou without checking it, which can cause a NULL pointer dereference (or a use-after-free) during teardown."
+    }
+  ],
+  "suggested_fix": "Read the pointer with rcu_dereference_sk_user_data(sk) instead of a plain sk->sk_user_data load. Update every caller, especially the GRO receive and complete handlers, to check for a NULL result and bail out (for example, skip GRO processing or return the error path) instead of dereferencing it."
+}

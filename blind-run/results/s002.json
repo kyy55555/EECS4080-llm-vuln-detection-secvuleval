@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "sess = ksmbd_session_lookup_slowpath(sess_id);",
+      "reason": "In the multichannel binding path, the session is looked up in the global session table. It belongs to another connection, and no reference is taken on it. Only the current connection's lock is held, so the owning connection can log off or tear down and free the session at the same time. Every later use of sess in this function can then touch freed memory."
+    },
+    {
+      "statement": "if (sess->user && sess->user->flags & KSMBD_USER_FLAG_DELAY_SESSION)",
+      "reason": "On the error path, the code reads sess and sess->user without holding a reference. The session may already have been freed by another connection, or sess->user may have been freed or replaced during re-authentication or logoff. Either case is a use-after-free."
+    },
+    {
+      "statement": "sess->state = SMB2_SESSION_EXPIRED;",
+      "reason": "On the error path, this writes to a session that this function holds no reference to. If the session was looked up through the binding slowpath and freed at the same time, this is a write to freed memory. A failed bind request also marks another connection's valid session as expired."
+    }
+  ],
+  "suggested_fix": "Give sessions a reference count. ksmbd_session_lookup_slowpath() and ksmbd_session_lookup() should take a reference, and the function should release it with ksmbd_user_session_put() on every exit path, including each early goto out_err. Error paths in the binding branch should drop the reference and set sess = NULL before reaching out_err, so a failed bind never changes the state of another connection's session. Access sess->user only under the session or user lock, and set it to NULL when the user is freed."
+}

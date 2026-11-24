@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "if (entry && (!check_id || entry->addr.id == addr->id))",
+      "reason": "This second check runs after msk->pm.lock has been released. It dereferences 'entry' (entry->addr.id) without any lock or RCU protection. Another thread can unlink and free the anno-list entry in the meantime, for example through mptcp_pm_free_anno_list or a concurrent removal or retransmit path. The read then touches freed memory."
+    },
+    {
+      "statement": "sk_stop_timer_sync(sk, &entry->add_timer);",
+      "reason": "The timer is stopped synchronously on 'entry' outside the pm lock. If the entry was freed concurrently, __timer_delete_sync runs on freed memory, which is a use-after-free."
+    }
+  ],
+  "suggested_fix": "Decide whether to stop the timer while still holding msk->pm.lock, and record the result in a local flag (stop_timer = true) instead of dereferencing entry again after unlocking. When check_id is false, also unlink the entry from the anno list under the lock (list_del) so no other path can free it concurrently. Wrap the lookup and sk_stop_timer_sync() in rcu_read_lock()/rcu_read_unlock(), and free entries with kfree_rcu, so that entry stays valid until the timer is synchronously stopped."
+}

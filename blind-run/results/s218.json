@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "rc = lpfc_sli_issue_mbox_wait(phba, mbox, 30);",
+      "reason": "Both mailbox issues only check for MBX_NOT_FINISHED (the second checks no return code at all). On MBX_TIMEOUT, lpfc_sli_issue_mbox_wait hands ownership of the mailbox to the asynchronous default completion handler (lpfc_sli_def_mbox_cmpl), which later frees mbox and its DMA buffer. The function keeps using mbox and mp (memset, reissue, bcopy from mp->virt)."
+    },
+    {
+      "statement": "lpfc_mbox_rsrc_cleanup(phba, mbox, MBOX_THD_UNLOCKED);",
+      "reason": "After a timeout, the error path still frees mbox and its buffer while the firmware or completion handler may still own them. The completion then touches freed memory or frees it again, causing a use-after-free or double free."
+    }
+  ],
+  "suggested_fix": "Check for MBX_TIMEOUT after each lpfc_sli_issue_mbox_wait() call. On timeout, return an error without touching or freeing mbox or its DMA buffer, because the completion handler now owns and will free them. Also check the return value of the second mailbox call before reading its status. Only call lpfc_mbox_rsrc_cleanup() when the mailbox has actually completed or was never issued."
+}

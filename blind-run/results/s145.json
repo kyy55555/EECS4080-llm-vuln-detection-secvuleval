@@ -1,0 +1,19 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-416",
+  "vulnerable_statements": [
+    {
+      "statement": "struct snd_soc_dai_link *pad = &card->dai_link[*index];",
+      "reason": "The pointer 'pad' is taken into the card->dai_link array before meson_card_reallocate_links() is called. That function reallocates the dai_link array (krealloc-style) and frees the old buffer, so 'pad' becomes a dangling pointer into freed memory."
+    },
+    {
+      "statement": "lb->name = devm_kasprintf(card->dev, GFP_KERNEL, \"%s-lb\", pad->name);",
+      "reason": "Dereferences the stale 'pad' pointer after the dai_link array was reallocated, i.e. reads freed memory (use-after-free)."
+    },
+    {
+      "statement": "lb->cpus->of_node = pad->cpus->of_node;",
+      "reason": "Again dereferences the stale 'pad' pointer (and the cpus pointer read from freed memory), a use-after-free that can yield a bogus of_node which is then refcounted with of_node_get()."
+    }
+  ],
+  "suggested_fix": "Do not hold a pointer into card->dai_link across meson_card_reallocate_links(). Compute 'pad' only after the reallocation succeeds, e.g. declare 'struct snd_soc_dai_link *pad;' and assign 'pad = &card->dai_link[*index];' right after the 'if (ret) return ret;' check (alongside the assignment of 'lb')."
+}

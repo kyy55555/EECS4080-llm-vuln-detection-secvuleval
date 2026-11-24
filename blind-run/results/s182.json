@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-404",
+  "vulnerable_statements": [
+    {
+      "statement": "if (disable_device) {",
+      "reason": "MSI/MSI-X vectors are only torn down when disable_device is true. On the hot-unplug path the function is called with disable_device == false, so after free_irq() the MSI/MSI-X interrupt allocation for the device stays in place. The vectors leak, and when the slot is re-plugged and pnv_php_enable_irq() enables MSI/MSI-X again on the stale state, the kernel can hit WARNs or crash (it does not clean up IRQ resources properly)."
+    },
+    {
+      "statement": "free_irq(php_slot->irq, php_slot);",
+      "reason": "The handler is freed but the MSI/MSI-X vector that backs it is not released unless the device is also disabled, so IRQ resources are left allocated across unplug/replug."
+    }
+  ],
+  "suggested_fix": "Split MSI teardown from device disable: add a separate flag (e.g. disable_msi) and call pci_disable_msix()/pci_disable_msi() when either disable_device or disable_msi is set, while calling pci_disable_device() only when disable_device is set. Make the unplug path pass disable_msi = true so the IRQ vectors are always released after free_irq(), and re-enabling on hot-plug starts from a clean state."
+}

@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function handles a failed sockfd_lookup by returning ERR_PTR(err). It accepts only UDP SOCK_DGRAM sockets in AF_INET, or AF_INET6 with IPV6_V6ONLY set. It checks and sets sk_user_data while holding lock_sock, takes a reference with sock_hold before installing the tunnel callbacks, and releases the lock and the file reference on every exit path."
+}

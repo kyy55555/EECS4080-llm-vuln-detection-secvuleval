@@ -1,0 +1,12 @@
+▶ Scanning: samples/s034.c
+▶ Report:   results/s034.json
+I marked `samples/s034.c` as **vulnerable** (CWE-404, improper resource shutdown or release) and wrote the answer to `results/s034.json`. My confidence is moderate: the problem depends on how the callers use this function, and those callers aren't in this file.
+
+**The flaw:** one condition, `if (disable_device || irq > 0)`, controls both turning off MSI/MSI-X interrupts and disabling the device with `pci_disable_device(pdev)`.
+- **Device disabled when the caller said not to:** if only the interrupt is being torn down (`disable_device == false` but `irq > 0`), the device is disabled anyway. That switches off a device that is still in use and leaves the enable/disable counts out of balance.
+- **Child interrupts leak:** when a hotplug slot with nested bridges is unplugged, MSI is turned off without first cleaning up the interrupts the child bridges set up for their own hotplug events. Those resources leak or are left pointing at freed state, and later teardown can crash the kernel.
+
+**Not a problem:** the teardown order is correct. The interrupt is freed (`free_irq`) before its workqueue is destroyed, so the interrupt handler can't queue work onto a workqueue that's already gone.
+
+**Suggested fix:** add a separate `disable_msi` flag. Turn off MSI/MSI-X when `disable_device || disable_msi`, and call `pci_disable_device()` only when `disable_device` is true. On unplug, free the child slots' interrupts and destroy their workqueues before releasing the parent's MSI vectors.
+✔ Report written to results/s034.json

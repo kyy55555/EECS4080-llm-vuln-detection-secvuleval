@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-843",
+  "vulnerable_statements": [
+    {
+      "statement": "if (parent->auto_domain || !parent->nest_parent)",
+      "reason": "The parent paging HWPT is validated only for auto_domain/nest_parent, but not that its domain was allocated by the same IOMMU driver (parent->common.domain->owner == ops). A user can pass a nest parent created on a device behind a different IOMMU driver/instance, and the parent domain is then handed to this device's driver."
+    },
+    {
+      "statement": "hwpt->domain = ops->domain_alloc_user(idev->dev,\n\t\t\t\t\t      flags & ~IOMMU_HWPT_FAULT_ID_VALID,\n\t\t\t\t\t      parent->common.domain, user_data);",
+      "reason": "The driver's domain_alloc_user casts the parent iommu_domain to its own driver-private domain structure (container_of). If the parent belongs to a different driver, this is a type confusion leading to out-of-bounds/invalid memory access in the kernel."
+    }
+  ],
+  "suggested_fix": "Reject parents whose domain was not allocated by the same IOMMU ops before calling into the driver, e.g. extend the check to `if (parent->auto_domain || !parent->nest_parent || parent->common.domain->owner != ops) return ERR_PTR(-EINVAL);`. This ensures the driver only receives parent domains of its own type."
+}

@@ -1,0 +1,12 @@
+▶ Scanning: samples/s016.c
+▶ Report:   results/s016.json
+I found no vulnerability in `intel_spi_populate_chip`, and I wrote `results/s016.json` with `is_vulnerable: false`, `cwe: null` and an empty statement list.
+
+What I checked:
+- **Allocations:** Every allocation is checked for failure before it's used: both `devm_kzalloc` calls, both `devm_kcalloc` calls, and `devm_kasprintf` (`s016.c:39-42`). That last one is where a missing check would most likely have been, and the check is there.
+- **String write:** `snprintf(chip.modalias, 8, "spi-nor")` is bounded. "spi-nor" plus its terminating null is exactly 8 bytes, so it fits.
+- **Second chip:** The second chip is only added when `num_chipselect >= 2`, with fresh platform data allocated for it.
+- **Error paths:** All the memory is device-managed (`devm_*`), so the kernel frees it automatically on the early returns. Nothing leaks.
+
+From memory, this looks like the upstream version that already has the missing-null-check fix for `devm_kasprintf`. I didn't verify that, since the task limited me to this file.
+✔ Report written to results/s016.json

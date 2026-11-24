@@ -1,0 +1,15 @@
+{
+  "is_vulnerable": true,
+  "cwe": "CWE-415",
+  "vulnerable_statements": [
+    {
+      "statement": "xe_irq_shutdown(xe);",
+      "reason": "On probe failure after xe_irq_install() succeeded, the error path tears down the IRQ manually, while xe_irq_install() typically also registers a devm action (irq_uninstall) that runs again when the device's managed resources are released. Mixing manual and devm-managed teardown can release the same IRQ/state twice, or tear it down out of order with the other managed resources."
+    },
+    {
+      "statement": "xe_display_fini(xe);",
+      "reason": "The shared 'err' label runs display finalization unconditionally on every path that reaches it, including when later display init stages were never done or were already partly undone by xe_display_driver_remove(). Other resources were registered through devm or drmm actions, and the order they are released in can differ from this one, so display state may be finalized twice or used after it is freed."
+    }
+  ],
+  "suggested_fix": "Make the probe error handling consistent. Either rely completely on devm/drmm-managed cleanup, by registering the IRQ uninstall and display fini as managed actions and removing the manual xe_irq_shutdown()/xe_display_fini() calls from the error labels, or make the manual teardown functions idempotent and drop the duplicate managed actions. Each error label should undo only the stages that actually finished, in reverse order."
+}

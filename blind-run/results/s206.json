@@ -1,0 +1,6 @@
+{
+  "is_vulnerable": false,
+  "cwe": null,
+  "vulnerable_statements": [],
+  "suggested_fix": "No fix required. The function checks kvm_has_gicv3() before dispatching SGIs and injects UNDEF otherwise, so a guest without a GICv3 cannot reach vgic_v3_dispatch_sgi() with uninitialized vGICv3 state. Reads of these write-only registers go to read_from_write_only(), and every Op1/Op2 encoding sets g1 to a defined value."
+}
